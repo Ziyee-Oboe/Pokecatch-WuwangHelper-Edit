@@ -48,11 +48,11 @@ var K = {
  *   - 普通（1）用中性灰，不强调
  */
 var CATEGORY = {
-  1: { key: 'normal',        name: '普通',               emoji: '🥚', barBg: '#cbd5e1', barDarkBg: '#475569', text: '#64748b', textDark: '#94a3b8', badge: null, berry: false,  shiny: false },
-  2: { key: 'plain-shiny',   name: '普通亲代裸闪',       emoji: '🌟', barBg: 'linear-gradient(90deg,#fbbf24,#f59e0b)', secBg: '#fef3c7', secBgDark: '#451a03', text: '#92400e', textDark: '#fcd34d', badge: '✨ 裸闪',    berry: false,  shiny: false },
-  3: { key: 'plain-berry',   name: '普通亲代吃果',       emoji: '🫐', barBg: 'linear-gradient(90deg,#818cf8,#6366f1)', secBg: '#e0e7ff', secBgDark: '#312e81', text: '#3730a3', textDark: '#a5b4fc', badge: '🫐 吃果',    berry: true,   shiny: false },
-  4: { key: 'shiny-shiny',   name: '闪光亲代裸闪',       emoji: '✨', barBg: 'linear-gradient(90deg,#fb923c,#ea580c)', secBg: '#ffedd5', secBgDark: '#431407', text: '#9a3412', textDark: '#fdba74', badge: '✦ 亲代闪',   berry: false,  shiny: true  },
-  5: { key: 'shiny-berry',   name: '闪光亲代吃果',       emoji: '💎', barBg: 'linear-gradient(90deg,#c084fc,#9333ea)', secBg: '#f3e8ff', secBgDark: '#3b0764', text: '#6b21a8', textDark: '#d8b4fe', badge: '✦🫐 亲代吃果', berry: true,   shiny: true  }
+  1: { key: 'normal',        name: '普通',           barBg: null,    text: null,    badge: null,           berry: false,  shiny: false },
+  2: { key: 'plain-shiny',   name: '普通闪',         barBg: null,    text: null,    badge: '✦ 普通闪',     berry: false,  shiny: false },
+  3: { key: 'plain-berry',   name: '吃果普通闪',     barBg: null,    text: null,    badge: '✦ 吃果普通闪', berry: true,   shiny: false },
+  4: { key: 'shiny-shiny',   name: '亲代闪',         barBg: null,    text: null,    badge: '✦ 亲代闪',     berry: false,  shiny: true  },
+  5: { key: 'shiny-berry',   name: '吃果亲代闪',     barBg: null,    text: null,    badge: '✦ 吃果亲代闪', berry: true,   shiny: true  }
 };
 
 /* ---------- 工具 ---------- */
@@ -480,7 +480,7 @@ function createPanel() {
   el.id = 'pcg-efh';
   el.innerHTML = [
     '<div class="pcg-head" id="pcg-efh-head">',
-    '  <span class="pcg-title">🥚 闪光蛋预测</span>',
+    '  <span class="pcg-title">闪光蛋预测</span>',
     '  <button id="pcg-efh-fold" title="折叠/展开">▾</button>',
     '  <button id="pcg-efh-theme" title="主题">◐</button>',
     '  <button id="pcg-efh-close" title="关闭">✕</button>',
@@ -621,7 +621,11 @@ function mergeHits(info, cap) {
 
 function catTag(cat) {
   var cls = cat === '闪光亲代' ? 't-s' : cat === '吃果闪光亲代' ? 't-f' : 't-p';
-  return '<i class="pcg-tag ' + cls + '">' + cat + '</i>';
+  var label = cat === '闪光亲代' ? '✦ 亲代闪'
+            : cat === '吃果闪光亲代' ? '✦ 吃果亲代闪'
+            : cat === '普通亲代' ? '✦ 普通闪'
+            : cat;
+  return '<i class="pcg-tag ' + cls + '">' + label + '</i>';
 }
 
 /* ---------- 主渲染 ---------- */
@@ -690,9 +694,9 @@ function paint() {
   /* 下一颗蛋状态 + 元信息（原版 popup meta 行同款） */
   if (nx) {
     var stTxt;
-    if (nx.plainShiny) stTxt = '<span class="pcg-shiny-badge">🌟 本颗即闪</span>';
-    else if (info.bx && nx.bxShiny) stTxt = '<span class="pcg-shiny-badge">🫐 已喂果，这颗会闪</span>';
-    else if (nx.bxShiny) stTxt = '<span class="pcg-tag t-f">🫐 喂果才闪</span>';
+    if (nx.plainShiny) stTxt = '<span class="pcg-shiny-badge">✦ 本颗即闪</span>';
+    else if (info.bx && nx.bxShiny) stTxt = '<span class="pcg-shiny-badge">✦ 已喂果，这颗会闪</span>';
+    else if (nx.bxShiny) stTxt = '<span class="pcg-tag t-f">✦ 喂果才闪</span>';
     else stTxt = '<span style="opacity:.6">不闪</span>';
     var bits = [];
     bits.push('下一颗 k=' + nx.k + ' roll=' + (nx.roll < 0.01 ? nx.roll.toFixed(5) : nx.roll.toFixed(4)));
@@ -707,7 +711,7 @@ function paint() {
   var bare = win.buckets[2].length + win.buckets[4].length;
   var berry = win.buckets[3].length + win.buckets[5].length;
   html += '<div class="pcg-sec">';
-  html += '<div class="pcg-sec-title"><span>🥚 蛋列表（近 ' + win.days + ' 天）</span>';
+  html += '<div class="pcg-sec-title"><span>蛋列表（近 ' + win.days + ' 天）</span>';
   html += '<span class="pcg-cat-count">裸闪 ' + bare + ' · 吃果 ' + berry + '</span></div>';
 
   /* 全量分布条 */
