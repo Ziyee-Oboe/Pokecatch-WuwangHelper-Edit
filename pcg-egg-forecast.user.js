@@ -564,7 +564,7 @@ function createPanel() {
   return el;
 }
 
-/* ---------- 渲染一行（纯文字，无进度条无 roll） ---------- */
+/* ---------- 渲染一行（纯文字，无进度条，roll 在 title 里） ---------- */
 function renderRow(row) {
   var cat = row.cat || 1;
   var c = CATEGORY[cat];
@@ -573,8 +573,11 @@ function renderRow(row) {
     : '';
   var etaStr = row.etaMs > 0 ? fmtDur(row.etaMs) : '（下一颗）';
   var badge = c.badge ? '<span class="pcg-cat-badge">' + c.badge + '</span>' : '';
+  var rollStr = row.roll != null ? (row.roll < 0.01 ? row.roll.toFixed(5) : row.roll.toFixed(4)) : '';
+  var effectiveTh = row.parent && row.parent.shiny ? (1/16) : (1/512);
+  var title = 'roll=' + rollStr + ' · threshold=' + effectiveTh.toFixed(4) + ' · k=' + row.k;
   return '' +
-    '<div class="pcg-row c' + cat + '">' +
+    '<div class="pcg-row c' + cat + '" title="' + title + '">' +
     '  <div>' +
     '    <span class="pcg-k">k=' + row.k + '</span>' + parentStr + badge +
     '  </div>' +
@@ -650,8 +653,11 @@ function paint() {
   var html = '';
 
   /* ---- 块一：亲代池（移到最前） ---- */
+  var effectiveThreshold = win.poolShiny > 0 ? '1/16' : '1/512';
   html += '<div class="pcg-sec">';
-  html += '<div class="pcg-sec-title"><span>亲代池 (' + win.poolSize + ' 只)</span></div>';
+  html += '<div class="pcg-sec-title"><span>亲代池 (' + win.poolSize + ' 只 · ' + effectiveThreshold + ' 档)';
+  if (win.poolShiny > 0) html += ' <span style="font-weight:400;opacity:.75;">含 ' + win.poolShiny + ' 只闪</span>';
+  html += '</span></div>';
   if (win.pool.length) {
     html += '<div class="pcg-prog-list">';
     for (var pi = 0; pi < win.pool.length; pi++) {
@@ -695,7 +701,10 @@ function paint() {
         ? ((it.parent.shiny ? '✦ ' : '') + '槽' + it.parent.slot + ' ' + dexName(it.parent.id))
         : '无亲代';
       var prefix = st2 === 0 ? '下一颗' : '再过 ' + st2 + ' 颗';
-      html += '<div class="pcg-row c4"><div><span class="pcg-k">' + prefix + ' · k=' + it.k + '</span>' +
+      var rowRoll = it.roll != null ? (it.roll < 0.01 ? it.roll.toFixed(5) : it.roll.toFixed(4)) : '';
+      var rowTh = it.parent && it.parent.shiny ? '1/16' : '1/512';
+      html += '<div class="pcg-row c4" title="roll=' + rowRoll + ' · threshold=' + rowTh + ' · k=' + it.k + '">';
+      html += '<div><span class="pcg-k">' + prefix + ' · k=' + it.k + '</span>' +
         '<span class="pcg-parent-badge">' + who2 + '</span>' + catTag(rest[ri].cat) + '</div>' +
         '<div class="pcg-val">' + (it.etaMs > 0 ? fmtDur(it.etaMs) : '—') + '</div></div>';
     }
