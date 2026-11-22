@@ -426,7 +426,10 @@ GM_addStyle([
   '  display: flex; justify-content: space-between; gap: 8px; background: #fafbfc; }',
   '#pcg-efh.pcg-dark .pcg-footer { border-color: #2a2f38; color: #9aa3af; background: #0f1216; }',
   '#pcg-efh .pcg-footer button { background: transparent; border: none; cursor: pointer; color: inherit; font-size: 11px; }',
-  '#pcg-efh .pcg-footer button:hover { text-decoration: underline; }',
+  '#pcg-efh #pcg-efh-refresh { background: linear-gradient(135deg,#fbbf24,#f59e0b); color: #fff; border: 1px solid #f59e0b; border-radius: 6px; padding: 4px 12px; font-size: 12px; font-weight: 700; cursor: pointer; box-shadow: 0 2px 8px rgba(245,158,11,.3); transition: transform .12s, box-shadow .12s; }',
+  '#pcg-efh #pcg-efh-refresh:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(245,158,11,.45); }',
+  '#pcg-efh #pcg-efh-refresh:active { transform: translateY(0); }',
+  '#pcg-efh.pcg-dark #pcg-efh-refresh { background: linear-gradient(135deg,#d97706,#b45309); border-color: #92400e; box-shadow: 0 2px 8px rgba(217,119,6,.35); }',
   '#pcg-efh .pcg-empty { color: #9aa3af; font-size: 12px; padding: 8px 0; text-align: center; }',
   '#pcg-efh .pcg-err { color: #dc2626; font-size: 12px; padding: 8px 0; text-align: center; }',
   '#pcg-efh .pcg-roll { font-family: "SF Mono",Menlo,Consolas,monospace; font-size: 10.5px; color: #5a616b; opacity: .85; }',
@@ -788,6 +791,6 @@ if (storeGet('closed') && Date.now() - storeGet('closed') < 60 * 60 * 1000) {
 
 var panel = createPanel();
 paint();
-setInterval(paint, 1000);
+/* 不自动刷新：只保留手动按钮 */
 
 })();
