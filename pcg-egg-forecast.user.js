@@ -622,13 +622,10 @@ function mergeHits(info, cap) {
   return cap ? out.slice(0, cap) : out;
 }
 
-function catTag(cat) {
-  var cls = cat === '闪光亲代' ? 't-s' : cat === '吃果闪光亲代' ? 't-f' : 't-p';
-  var label = cat === '闪光亲代' ? '✦ 亲代闪'
-            : cat === '吃果闪光亲代' ? '✦ 吃果亲代闪'
-            : cat === '普通亲代' ? '✦ 普通闪'
-            : cat;
-  return '<i class="pcg-tag ' + cls + '">' + label + '</i>';
+function catTag(catNum) {
+  var c = CATEGORY[catNum] || CATEGORY[1];
+  if (!c.badge) return '';
+  return '<span class="pcg-cat-badge c' + catNum + '">' + c.badge + '</span>';
 }
 
 /* ---------- 主渲染 ---------- */
@@ -709,7 +706,7 @@ function paint() {
       var hitCat = hits[ri].catNum || 4;
       html += '<div class="pcg-row c' + hitCat + '" title="roll=' + rowRoll + ' · threshold=' + rowTh + ' · k=' + it.k + '">';
       html += '<div><span class="pcg-k">' + prefix + '</span>' +
-        '<span class="pcg-parent-badge">' + who2 + '</span>' + catTag(hits[ri].cat) + '</div>' +
+        '<span class="pcg-parent-badge">' + who2 + '</span>' + catTag(hitCat) + '</div>' +
         '<div class="pcg-val">' + (it.etaMs > 0 ? fmtDur(it.etaMs) : '—') + '</div></div>';
     }
   } else {
@@ -721,7 +718,7 @@ function paint() {
     var stTxt;
     if (nx.plainShiny) stTxt = '<span class="pcg-shiny-badge">✦ 本颗即闪</span>';
     else if (info.bx && nx.bxShiny) stTxt = '<span class="pcg-shiny-badge">✦ 已喂果，这颗会闪</span>';
-    else if (nx.bxShiny) stTxt = '<span class="pcg-tag t-f">✦ 喂果才闪</span>';
+    else if (nx.bxShiny) stTxt = catTag(nx.cat || 3);
     else stTxt = '<span style="opacity:.6">不闪</span>';
     var bits = [];
     if (info.bx) bits.push('已吃果 ×2');
