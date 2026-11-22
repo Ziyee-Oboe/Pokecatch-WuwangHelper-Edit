@@ -274,6 +274,102 @@ function nextShinyInfo(save) {
   return null;
 }
 
+/* ---------- 30 天窗口扫描：把未来 720 颗蛋全部分类 ---------- */
+var WINDOW_DAYS = 30;
+function windowScan(save, days) {
+  days = days || WINDOW_DAYS;
+  var pen = save && save.pension;
+  if (!pen) return null;
+  var laid = Number.isFinite(pen.laid)
+    ? pen.laid
+    : ((+save.stats && +save.stats.hatched || 0) + (Array.isArray(pen.eggs) ? pen.eggs.length : 0));
+  var goal = Number(pen.eggGoal) || K.EGG_MS;  // 每颗蛋的周期（ms）
+  var bxNext = !!pen.bx;
+  var base = K.SHINY_RATE;
+  var parentRate = Math.max(K.SHINY_PARENT_RATE, base);
+  var mult = 2;
+  var ts = trainerSeed(save);
+
+  /* 亲代池（和 nextShinyInfo 完全一致） */
+  var pool = [];
+  var hasDitto = false;
+  try {
+    var roster = Array.isArray(pen.mons) ? pen.mons : [];
+    for (var pi = 0; pi < roster.length; pi++) {
+      var pm = roster[pi] && roster[pi].mon;
+      if (!pm) continue;
+      var pid = Number(pm.id) || 0;
+      if (pid === K.DITTO) { hasDitto = true; continue; }
+      if (pm.noEgg || K.NO_EGG.indexOf(pid) >= 0) continue;
+      pool.push({ uid: pm.uid, id: pid, shiny: !!pm.shiny, slot: pool.length + 1 });
+    }
+  } catch (e) { /* ignore */ }
+
+  /* 窗口大小 */
+  var totalMs = days * 86400000;
+  var count = Math.floor(totalMs / goal) + 1;  // 30 天 ÷ 4h ≈ 180 颗
+
+  /* 逐颗扫描 */
+  var rows = [];
+  var catBuckets = { 1: [], 2: [], 3: [], 4: [], 5: [] };
+  for (var i = 0; i < count; i++) {
+    var k = laid + i;
+    var roll = eggHash(ts + '|egg|' + k + '|0');
+    var parent = null;
+    var threshold = base;
+    if (pool.length) {
+      var idx = Math.floor(eggHash(ts + '|egg|' + k + '|1') * pool.length);
+      parent = pool[idx] || null;
+      if (parent && parent.shiny) threshold = parentRate;
+    }
+    // 第 0 颗（下一颗）吃果状态：bxNext 会让阈值 ×2
+    if (i === 0 && bxNext) threshold = threshold * mult;
+
+    /* 分类判定（和 classifyRow 逻辑一致，这里 inline 避免 roll 被重新算） */
+    var cat;
+    var hasShinyParent = parent && parent.shiny;
+    if (hasShinyParent) {
+      var thFlash = parentRate * (i === 0 && bxNext ? 1 : 1);  // flash 区间起点
+      var thFlashTop = parentRate * mult;
+      if (roll < parentRate) cat = 4;                       // 闪光亲代裸闪
+      else if (roll < thFlashTop) cat = 5;                 // 闪光亲代吃果
+      else cat = 1;
+    } else {
+      if (roll < base) cat = 2;                             // 普通亲代裸闪
+      else if (roll < base * mult) cat = 3;                 // 普通亲代吃果
+      else cat = 1;
+    }
+
+    var row = {
+      step: i, k: k, roll: roll, threshold: threshold,
+      parent: parent ? { id: parent.id, shiny: parent.shiny, slot: parent.slot } : null,
+      cat: cat, etaMs: i * goal,
+      bxNote: (i === 0 && bxNext)
+    };
+    rows.push(row);
+    catBuckets[cat].push(row);
+  }
+
+  return {
+    laid: laid, bx: bxNext, pool: pool,
+    poolSize: pool.length, poolShiny: pool.filter(function (p) { return p.shiny; }).length,
+    totalScanned: rows.length, days: days,
+    rows: rows, buckets: catBuckets,
+    /* 便捷：nextShinyInfo 的 info.next 等价物 */
+    next: (function () {
+      var n0 = rows[0];
+      return {
+        k: n0.k, roll: n0.roll, threshold: n0.threshold,
+        thresholdBx: (n0.parent && n0.parent.shiny ? parentRate : base) * mult,
+        parent: n0.parent, cat: n0.cat,
+        plainShiny: n0.roll < (n0.parent && n0.parent.shiny ? parentRate : base),
+        bxShiny: n0.roll < (n0.parent && n0.parent.shiny ? parentRate : base) * mult,
+        bxPending: bxNext
+      };
+    })()
+  };
+}
+
 /* ---------- 存档读取（localStorage，零网络） ---------- */
 var SAVE_KEY = 'gachamon-save-v1';
 var saveCache = { at: 0, data: null };
@@ -478,46 +574,26 @@ function createPanel() {
   return el;
 }
 
-/* ---------- 给一颗蛋判定属于哪个分类（返回 cat 数字 1-5） ---------- */
-function classifyRow(row, base, parentRate, mult) {
-  var r = row.roll != null ? row.roll : (row.k != null ? eggKHash(row.k, _paintSave) : 0);
-  var hasShinyParent = row.parent && row.parent.shiny;
-  // 4/5 优先级最高：亲代是闪光的情况
-  if (hasShinyParent) {
-    if (r < Math.max(parentRate, base)) return 4;
-    if (r < Math.max(parentRate, base) * mult) return 5;
-  }
-  // 2/3：普通亲代
-  if (r < base) return 2;
-  if (r < base * mult) return 3;
-  return 1;
-}
-
-/* ---------- 渲染一行候选（带分类颜色） ---------- */
-var _paintSave = null;  // 让 classifyRow 在 renderRow 里能访问
-function renderRow(row, cat, base, parentRate, mult) {
-  var c = CATEGORY[cat] || CATEGORY[1];
-  var roll = row.roll != null ? row.roll : (row.k != null ? eggKHash(row.k, _paintSave) : 0);
+/* ---------- 渲染一行候选（row.cat 已由 windowScan 判好） ---------- */
+function renderRow(row) {
+  var cat = row.cat || 1;
+  var c = CATEGORY[cat];
+  var roll = row.roll;
   var rollStr = roll < 0.01 ? roll.toFixed(5) : roll.toFixed(4);
-  var kStr = row.k != null ? 'k=' + row.k : '';
   var parentStr = row.parent
     ? ('<span class="pcg-parent-badge">' + (row.parent.shiny ? '✦' : '') + dexName(row.parent.id) + '·槽' + row.parent.slot + '</span>')
     : '';
-  var etaStr = row.etaMs != null && row.etaMs > 0 ? fmtDur(row.etaMs) : (row.step === 0 ? '（下一颗）' : '');
-  var thNow = row.parent && row.parent.shiny ? Math.max(parentRate, base) : base;
-  var thStr = roll < thNow ? '裸闪阈值 ' + thNow.toFixed(4)
-              : roll < thNow * mult ? '吃果阈值 ' + (thNow * mult).toFixed(4)
-              : '';
-  var pct = Math.min(100, Math.max(15, roll * 500));
+  var etaStr = row.etaMs > 0 ? fmtDur(row.etaMs) : '（下一颗）';
+  var pct = Math.min(100, Math.max(12, roll * 500));
   var badge = c.badge ? '<span class="pcg-cat-badge">' + c.badge + '</span>' : '';
   return '' +
     '<div class="pcg-row c' + cat + '">' +
     '  <div>' +
-    '    <span class="pcg-k">#' + row.step + ' ' + kStr + '</span>' + parentStr + badge +
-    '    <div class="pcg-roll">roll=' + rollStr + (thStr ? ' · ' + thStr : '') + '</div>' +
+    '    <span class="pcg-k">k=' + row.k + '</span>' + parentStr + badge +
+    '    <div class="pcg-roll">roll=' + rollStr + '</div>' +
     '    <div class="pcg-bar"><div style="width:' + pct + '%"></div></div>' +
     '  </div>' +
-    '  <div class="pcg-val">' + etaStr + '</div>' +
+    '  <div class="pcg-val">+' + row.step + ' · ' + etaStr + '</div>' +
     '</div>';
 }
 
@@ -535,29 +611,21 @@ function paint() {
     return;
   }
 
-  var info = nextShinyInfo(save);
+  var info = windowScan(save, WINDOW_DAYS);
   if (!info) {
     body.innerHTML = '<div class="pcg-err">存档 pension 字段缺失</div>';
     footer.textContent = '存档不兼容';
     return;
   }
 
-  _paintSave = save;  // 让 classifyRow / renderRow 里的 eggKHash 能访问
-  var base = K.SHINY_RATE;
-  var parentRate = Math.max(info.poolShiny > 0 ? K.SHINY_PARENT_RATE : base, base);  // 实际用的闪亲阈值
-  var mult = 2;
-
   /* ---- 下一颗蛋大卡片 ---- */
   var ni = info.next;
-  var nextCat = ni.parent && ni.parent.shiny
-    ? (ni.plainShiny ? 4 : (ni.bxShiny ? 5 : 1))
-    : (ni.plainShiny ? 2 : (ni.bxShiny ? 3 : 1));
-  var nextC = CATEGORY[nextCat];
+  var nextC = CATEGORY[ni.cat] || CATEGORY[1];
   var cardNote = '';
-  if (nextCat >= 2 && info.bx) cardNote += '🫐 已喂靛莓果';
-  if (info.poolShiny > 0) cardNote += (cardNote ? ' · ' : '') + '亲代池含闪';
+  if (ni.cat >= 2 && info.bx) cardNote += '🫐 已喂靛莓果';
+  if (info.poolShiny > 0) cardNote += (cardNote ? ' · ' : '') + '亲代池含 ' + info.poolShiny + ' 只闪';
 
-  var html = '<div class="pcg-next-egg c' + nextCat + '">';
+  var html = '<div class="pcg-next-egg c' + ni.cat + '">';
   html += '<h3>' + nextC.emoji + ' 下一颗蛋 · k=' + ni.k + '</h3>';
   html += '<span class="pcg-next-cat">' + nextC.name + '</span>';
   html += '<div style="margin-top:6px;font-size:11.5px;color:inherit;opacity:.85;">';
@@ -567,34 +635,54 @@ function paint() {
   if (cardNote) html += '<div style="margin-top:4px;font-size:11px;opacity:.75;">' + cardNote + '</div>';
   html += '</div>';
 
-  /* ---- 四类候选 section ----
-   * 排序：c4 闪光亲代裸闪（最稀有）→ c2 普通亲代裸闪 → c5 闪光亲代吃果 → c3 普通亲代吃果
-   */
-  var sections = [
-    { cat: 4, list: info.shinyList, limit: 20000, label: null },
-    { cat: 2, list: info.plainList, limit: 50000, label: null },
-    { cat: 5, list: info.flipShinyList, limit: 20000, label: null },
-    { cat: 3, list: info.flipList, limit: 2000,  label: null }
-  ];
+  /* ---- 卡片 A：闪光候选（cat 2/3/4/5），按稀有度排序 ---- */
+  var shinyRows = [];
+  shinyRows = shinyRows.concat(info.buckets[4], info.buckets[2], info.buckets[5], info.buckets[3]);
+  html += '<div class="pcg-sec" style="background:#f8fafc;border-color:#e2e8f0;">';
+  html += '<div class="pcg-sec-title"><span>🌟 闪光预测（近 ' + info.days + ' 天）</span>';
+  html += '<span class="pcg-cat-count">' + shinyRows.length + ' / ' + info.totalScanned + '</span></div>';
 
-  for (var si = 0; si < sections.length; si++) {
-    var sec = sections[si];
-    var c = CATEGORY[sec.cat];
-    var rows = sec.list || [];
-    html += '<div class="pcg-sec c' + sec.cat + '">';
-    html += '<div class="pcg-sec-title">';
-    html += '<span>' + c.emoji + ' ' + c.name + '</span>';
-    html += '<span class="pcg-cat-count">' + rows.length + '</span>';
-    html += '</div>';
-    if (rows.length) {
-      for (var ri = 0; ri < rows.length; ri++) {
-        html += renderRow(rows[ri], sec.cat, base, parentRate, mult);
-      }
-    } else {
-      html += '<div class="pcg-empty">' + sec.limit + ' 颗内未命中</div>';
+  if (shinyRows.length) {
+    /* 分布小统计条 */
+    html += '<div style="display:flex;gap:3px;margin:4px 0 8px;">';
+    var distBar = [4, 2, 5, 3].map(function (c) {
+      var n = info.buckets[c].length;
+      var pct = Math.round(n / info.totalScanned * 100);
+      return '<span style="flex:1;height:14px;border-radius:3px;background:' + CATEGORY[c].barBg + ';'
+           + 'display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff;font-weight:700;opacity:.9;">'
+           + (n > 0 ? n : '') + '</span>';
+    }).join('');
+    html += distBar + '</div>';
+    /* 每行 */
+    for (var si = 0; si < shinyRows.length; si++) {
+      html += renderRow(shinyRows[si]);
     }
-    html += '</div>';
+  } else {
+    html += '<div class="pcg-empty">窗口内未命中任何闪光（裸闪或吃果闪）</div>';
   }
+  html += '</div>';
+
+  /* ---- 卡片 B：全量蛋（cat 1/2/3/4/5，按 k 顺序） ---- */
+  var allRows = info.rows;  // 已经按 k 排好序
+  html += '<div class="pcg-sec" style="background:#f8fafc;border-color:#e2e8f0;">';
+  html += '<div class="pcg-sec-title"><span>🥚 全量蛋（近 ' + info.days + ' 天）</span>';
+  html += '<span class="pcg-cat-count">' + allRows.length + ' 颗</span></div>';
+
+  /* 全量分布条 */
+  html += '<div style="display:flex;gap:3px;margin:4px 0 8px;">';
+  var allDist = [1, 2, 3, 4, 5].map(function (c) {
+    var n = info.buckets[c].length;
+    return '<span style="flex:1;height:14px;border-radius:3px;'
+         + (c === 1 ? 'background:#cbd5e1;' : 'background:' + CATEGORY[c].barBg + ';')
+         + 'display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff;font-weight:700;opacity:.9;"'
+         + 'title="' + CATEGORY[c].name + '：' + n + '">';
+  }).join('');
+  html += allDist + '</div>';
+
+  for (var ai = 0; ai < allRows.length; ai++) {
+    html += renderRow(allRows[ai]);
+  }
+  html += '</div>';
 
   /* ---- 亲代池概览 ---- */
   html += '<div class="pcg-sec" style="background:#f8fafc;border-color:#e2e8f0;">';
@@ -604,7 +692,6 @@ function paint() {
     for (var pi = 0; pi < info.pool.length; pi++) {
       var pp = info.pool[pi];
       var isShiny = pp.shiny;
-      var cc = isShiny ? CATEGORY[4] : CATEGORY[2];
       html += '<span style="font-size:11px;padding:2px 6px;border-radius:4px;font-weight:500;'
             + 'background:' + (isShiny ? '#ffedd5' : '#fef3c7') + ';color:' + (isShiny ? '#9a3412' : '#92400e') + ';'
             + 'border:1px solid ' + (isShiny ? '#fdba74' : '#fcd34d') + ';">';
@@ -619,9 +706,7 @@ function paint() {
   html += '</div>';
 
   body.innerHTML = html;
-  var shinyTotal = (info.shinyList.length + info.plainList.length);
-  var berryTotal = (info.flipShinyList.length + info.flipList.length);
-  footer.textContent = 'laid=' + info.laid + ' · 裸闪 ' + shinyTotal + ' · 吃果 ' + berryTotal;
+  footer.textContent = 'laid=' + info.laid + ' · 近' + info.days + '天扫' + info.totalScanned + '颗 · 命中' + shinyRows.length;
 }
 
 /* ---------- 启动 ---------- */
