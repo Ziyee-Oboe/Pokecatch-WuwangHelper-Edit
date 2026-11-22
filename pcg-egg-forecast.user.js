@@ -364,6 +364,7 @@ GM_addStyle([
   '  overflow: hidden; border-radius: 10px; background: #fff; box-shadow: 0 4px 18px rgba(0,0,0,.15);',
   '  font-size: 12.5px; font-family: -apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;',
   '  color: #1b1f24; z-index: 99999; display: flex; flex-direction: column; }',
+  '#pcg-efh.folded { display: none !important; }',
   '#pcg-efh.pcg-dark { background: #161a20; color: #e6e9ef; box-shadow: 0 4px 18px rgba(0,0,0,.5); }',
   '#pcg-efh.dragging { opacity: .85; user-select: none; }',
   '#pcg-efh .pcg-head { display: flex; align-items: center; gap: 6px; padding: 8px 10px;',
@@ -375,7 +376,6 @@ GM_addStyle([
   '#pcg-efh .pcg-head button:hover { background: rgba(0,0,0,.08); }',
   '#pcg-efh.pcg-dark .pcg-head button:hover { background: rgba(255,255,255,.1); }',
   '#pcg-efh .pcg-body { padding: 10px; overflow-y: auto; flex: 1; }',
-  '#pcg-efh .pcg-body.folded { display: none; }',
   '#pcg-efh .pcg-sec { margin-bottom: 12px; padding: 8px; border-radius: 8px; background: #f8fafc; border: 1px solid #e2e8f0; }',
   '#pcg-efh.pcg-dark .pcg-sec { background: #1c2128; border-color: #2a2f38; }',
   '#pcg-efh .pcg-sec.c2 { background: #fef9c3; border-color: #fde68a; }',
@@ -413,7 +413,7 @@ GM_addStyle([
   '#pcg-efh.pcg-dark .pcg-row.c1 .pcg-bar > div { background: #475569; }',
   '#pcg-efh .pcg-parent-badge { font-size: 11px; padding: 0 4px; border-radius: 3px; background: rgba(255,255,255,.7); color: #0369a1; margin-left: 4px; border: 1px solid #bae6fd; }',
   '#pcg-efh.pcg-dark .pcg-parent-badge { background: rgba(56,189,248,.15); color: #7dd3fc; border-color: #0c4a6e; }',
-  '#pcg-efh .pcg-cat-badge { font-size: 10px; padding: 1px 5px; border-radius: 3px; margin-left: 6px; font-weight: 600; letter-spacing: .02em; }',
+  '#pcg-efh .pcg-cat-badge { font-size: 10px; padding: 1px 5px; border-radius: 3px; margin-left: 6px; font-weight: 600; letter-spacing: .02em; font-style: normal; }',
   '#pcg-efh .pcg-row.c2 .pcg-cat-badge { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }',
   '#pcg-efh.pcg-dark .pcg-row.c2 .pcg-cat-badge { background: rgba(245,158,11,.15); color: #fcd34d; border-color: #92400e; }',
   '#pcg-efh .pcg-row.c3 .pcg-cat-badge { background: #e0e7ff; color: #3730a3; border: 1px solid #a5b4fc; }',
@@ -448,15 +448,19 @@ GM_addStyle([
   '#pcg-efh .pcg-next-egg.c3 .pcg-next-cat { background: #6366f1; color: #fff; }',
   '#pcg-efh .pcg-next-egg.c4 .pcg-next-cat { background: #ea580c; color: #fff; }',
   '#pcg-efh .pcg-next-egg.c5 .pcg-next-cat { background: #9333ea; color: #fff; }',
-  '#pcg-efh .pcg-tag { display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 10px; font-size: 10.5px; font-weight: 600; }',
-  '#pcg-efh .pcg-tag.t-s { background: #fef3c7; color: #92400e; }',
-  '#pcg-efh .pcg-tag.t-f { background: #ffedd5; color: #9a3412; }',
-  '#pcg-efh .pcg-tag.t-p { background: #e2e8f0; color: #334155; }',
-  '#pcg-efh.pcg-dark .pcg-tag.t-s { background: #78350f; color: #fde68a; }',
-  '#pcg-efh.pcg-dark .pcg-tag.t-f { background: #7c2d12; color: #fdba74; }',
-  '#pcg-efh.pcg-dark .pcg-tag.t-p { background: #334155; color: #cbd5e1; }',
   '#pcg-efh .pcg-shiny-badge { display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 10px; font-size: 10.5px; font-weight: 700; background: linear-gradient(135deg,#fef3c7,#fde68a); color: #92400e; border: 1px solid #fcd34d; }',
   '#pcg-efh.pcg-dark .pcg-shiny-badge { background: linear-gradient(135deg,#78350f,#92400e); color: #fde68a; border-color: #b45309; }',
+
+  /* ---- 悬浮球（默认显示，点击展开面板） ---- */
+  '#pcg-efh-orb { position: fixed; width: 44px; height: 44px; border-radius: 50%; z-index: 99998;',
+  '  display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none;',
+  '  background: linear-gradient(135deg,#fbbf24,#f59e0b); color: #fff; font-size: 22px; font-weight: 700;',
+  '  box-shadow: 0 4px 14px rgba(245,158,11,.35); border: 2px solid #fff;',
+  '  transition: transform .15s, box-shadow .15s; line-height: 1; }',
+  '#pcg-efh-orb:hover { transform: scale(1.08); box-shadow: 0 6px 20px rgba(245,158,11,.5); }',
+  '#pcg-efh-orb.dragging { opacity: .75; cursor: move; }',
+  '#pcg-efh-orb.pcg-dark { background: linear-gradient(135deg,#d97706,#b45309); border-color: #451a03;',
+  '  box-shadow: 0 4px 14px rgba(217,119,6,.4); }',
   '#pcg-efh .pcg-warn { color: #b45309; }',
   '#pcg-efh.pcg-dark .pcg-warn { color: #fbbf24; }',
   '#pcg-efh .pcg-dist-bar { display: flex; gap: 3px; margin: 4px 0 8px; }',
@@ -485,9 +489,8 @@ function createPanel() {
   el.innerHTML = [
     '<div class="pcg-head" id="pcg-efh-head">',
     '  <span class="pcg-title">闪光蛋预测</span>',
-    '  <button id="pcg-efh-fold" title="折叠/展开">▾</button>',
+    '  <button id="pcg-efh-fold" title="最小化（回到悬浮球）">▾</button>',
     '  <button id="pcg-efh-theme" title="主题">◐</button>',
-    '  <button id="pcg-efh-close" title="关闭">✕</button>',
     '</div>',
     '<div class="pcg-body" id="pcg-efh-body"></div>',
     '<div class="pcg-footer">',
@@ -497,41 +500,60 @@ function createPanel() {
   ].join('');
   document.documentElement.appendChild(el);
 
-  /* 折叠状态 */
+  /* 悬浮球（默认显示，点击展开面板） */
+  var orb = document.createElement('div');
+  orb.id = 'pcg-efh-orb';
+  orb.title = '闪光蛋预测 · 点击展开';
+  orb.innerHTML = '✦';
+  document.documentElement.appendChild(orb);
+
+  /* 默认收起（悬浮球显示 / 面板隐藏） */
   var folded = storeGet('folded');
-  if (folded) {
-    el.classList.add('folded');
-    el.querySelector('.pcg-body').classList.add('folded');
-    el.querySelector('#pcg-efh-fold').textContent = '▴';
-  }
+  if (folded !== false) { folded = true; }  // 默认收起
+  applyFold(folded);
 
   /* 主题 */
   var theme = storeGet('theme');
   if (!theme) theme = (matchMedia && matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
-  if (theme === 'dark') el.classList.add('pcg-dark');
+  if (theme === 'dark') { el.classList.add('pcg-dark'); orb.classList.add('pcg-dark'); }
 
-  /* 位置 */
+  /* 位置（面板 + 悬浮球各自独立存位置） */
   var pos = storeGet('pos');
   if (pos && typeof pos.left === 'number') {
     el.style.left = pos.left + 'px';
     el.style.top = pos.top + 'px';
     el.style.right = 'auto';
   }
+  var orbPos = storeGet('orbPos');
+  if (orbPos && typeof orbPos.left === 'number') {
+    orb.style.left = orbPos.left + 'px';
+    orb.style.top = orbPos.top + 'px';
+    orb.style.right = 'auto';
+  } else {
+    /* 默认悬浮球靠右上 */
+    orb.style.right = '20px';
+    orb.style.top = '20px';
+  }
 
-  /* 事件绑定 */
+  /* 事件：折叠按钮 ↔ 悬浮球 */
   el.querySelector('#pcg-efh-fold').addEventListener('click', function () {
-    el.querySelector('.pcg-body').classList.toggle('folded');
-    var f = el.querySelector('.pcg-body').classList.contains('folded');
-    storeSet('folded', f);
-    el.querySelector('#pcg-efh-fold').textContent = f ? '▴' : '▾';
+    applyFold(true);  // 点最小化 → 收起出球
   });
+  orb.addEventListener('click', function (e) {
+    if (e.target.tagName === 'BUTTON') return;
+    applyFold(false);  // 点悬浮球 → 展开面板
+  });
+  function applyFold(isFolded) {
+    el.classList.toggle('folded', isFolded);
+    orb.style.display = isFolded ? 'flex' : 'none';
+    storeSet('folded', isFolded);
+  }
+
+  /* 主题切换 */
   el.querySelector('#pcg-efh-theme').addEventListener('click', function () {
     el.classList.toggle('pcg-dark');
+    orb.classList.toggle('pcg-dark');
     storeSet('theme', el.classList.contains('pcg-dark') ? 'dark' : 'light');
-  });
-  el.querySelector('#pcg-efh-close').addEventListener('click', function () {
-    el.remove();
-    storeSet('closed', Date.now());
   });
   el.querySelector('#pcg-efh-refresh').addEventListener('click', function () { saveCache.at = 0; paint(); });
 
@@ -565,7 +587,44 @@ function createPanel() {
     });
   })();
 
-  return el;
+  /* 悬浮球拖动 */
+  (function dragOrb() {
+    var offX = 0, offY = 0, dragging = false;
+    orb.addEventListener('mousedown', function (e) {
+      dragging = true;
+      orb.classList.add('dragging');
+      var rect = orb.getBoundingClientRect();
+      offX = e.clientX - rect.left;
+      offY = e.clientY - rect.top;
+      e.preventDefault();
+      e.stopPropagation();
+    });
+    document.addEventListener('mousemove', function (e) {
+      if (!dragging) return;
+      var ow = 44, oh = 44;
+      var x = Math.max(4, Math.min(window.innerWidth - ow - 4, e.clientX - offX));
+      var y = Math.max(4, Math.min(window.innerHeight - oh - 4, e.clientY - offY));
+      orb.style.left = x + 'px';
+      orb.style.top = y + 'px';
+      orb.style.right = 'auto';
+    });
+    document.addEventListener('mouseup', function () {
+      if (dragging) {
+        dragging = false;
+        orb.classList.remove('dragging');
+        storeSet('orbPos', { left: parseInt(orb.style.left), top: parseInt(orb.style.top) });
+      }
+    });
+    /* 拖动结束后点击仍会触发展开，加个判断：移动过就不展开 */
+    var moved = false;
+    orb.addEventListener('mousedown', function () { moved = false; });
+    document.addEventListener('mousemove', function () { if (dragging) moved = true; });
+    orb.addEventListener('click', function (e) {
+      if (moved) { e.preventDefault(); e.stopPropagation(); return; }
+    });
+  })();
+
+  return { el: el, orb: orb };
 }
 
 /* ---------- 渲染一行（纯文字，无进度条，roll 在 title 里） ---------- */
@@ -713,19 +772,7 @@ function paint() {
     html += '<div class="pcg-empty">扫描范围内暂无命中</div>';
   }
 
-  /* 元信息行（百变怪已挪到亲代池，这里去掉百变怪比特） */
-  if (nx) {
-    var stTxt;
-    if (nx.plainShiny) stTxt = '<span class="pcg-shiny-badge">✦ 本颗即闪</span>';
-    else if (info.bx && nx.bxShiny) stTxt = '<span class="pcg-shiny-badge">✦ 已喂果，这颗会闪</span>';
-    else if (nx.bxShiny) stTxt = catTag(nx.cat || 3);
-    else stTxt = '<span style="opacity:.6">不闪</span>';
-    var bits = [];
-    if (info.bx) bits.push('已吃果 ×2');
-    if (info.poolShiny > 0) bits.push('亲代池含 ' + info.poolShiny + ' 闪');
-    html += '<div class="pcg-row" style="background:rgba(255,255,255,.3);"><div>' + bits.join(' · ') + '</div>' +
-      '<div>' + stTxt + '</div></div>';
-  }
+  /* 元信息行已删除：信息已自解释 */
   html += '</div>';
 
   /* ---- 块三：蛋列表 ---- */
