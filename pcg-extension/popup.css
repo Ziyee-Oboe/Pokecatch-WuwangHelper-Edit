@@ -1,0 +1,2464 @@
+/* ===== 外观主题 =====
+ * 颜色一律走语义变量；--bg 用系统色 Canvas，直接取浏览器窗口底色。
+ * theme.js 在 <head> 里同步写 data-scheme，下面的 media 块是脚本没跑起来时的兜底。
+ * 改配色只改这两张表，别再把颜色写进具体规则里。
+ */
+:root {
+  color-scheme: dark;
+  --bg: Canvas;
+  --card: #1b1f2b;
+  --card2: #222735;
+  --sunken: #12161f;
+  --tip-bg: #0e1118;
+  --line: #2c3242;
+  --line-strong: #2a3242;
+  --line-hover: #3b4256;
+  --text: #e8ecf4;
+  --text-soft: #cdd5e4;
+  --muted: #9aa4b8;
+  --faint: #6f7a90;
+  --gold: #ffcb05;
+  --gold-solid: #ffcb05;
+  --gold-soft: #e8c76a;
+  --gold-tint: rgba(255,203,5,.78);
+  --gold-wash: rgba(255,203,5,.10);
+  --gold-wash-soft: rgba(255,203,5,.08);
+  --gold-border: rgba(255,203,5,.55);
+  --on-gold: #201a00;
+  --green: #3ddc84;
+  --green-soft: #3f8f62;
+  --on-green: #0e1512;
+  --red: #e3353b;
+  --danger: #ff9a9a;
+  --danger-soft: #ff8a8a;
+  --danger-strong: #ff6b6b;
+  --danger-line: rgba(255,120,120,.35);
+  --danger-glow: rgba(255,107,107,.4);
+  --blue: #4a8fd6;
+  --blue-soft: #8fc4f0;
+  --track: #333a4b;
+  --track-on: #2f7d4f;
+  --knob: #c9d1e0;
+  --warn: #ffd479;
+  --warn-text: #ffe07a;
+  --warn-bg: #2a2410;
+  --warn-line: #6b5a10;
+  --warn-wash: rgba(255,212,121,.08);
+  /* 第二十批：功能卡片「运行状态」配色 */
+  --run-on-line: rgba(61,220,132,.45);
+  --run-on-wash: rgba(61,220,132,.10);
+  --run-wait-line: rgba(255,203,5,.45);
+  --run-wait-wash: rgba(255,203,5,.09);
+  --row-line: rgba(255,255,255,.045);
+  --log-line: rgba(255,255,255,.04);
+  --shadow: rgba(0,0,0,.5);
+  --filter-on-bg: #2c3446;
+  --filter-on-line: #3b4458;
+  --mod-bg: #252b3a;
+  --mod-fg: #7e8aa2;
+  --lv-info-bg: #2a3446;
+  --lv-info-fg: #9fb4d8;
+  --lv-ok-bg: #173b2a;
+  --lv-ok-fg: #7ce0a5;
+  --lv-warn-bg: #3d3212;
+  --lv-error-bg: #3f1d20;
+  --lv-debug-bg: #282c38;
+  --lv-debug-fg: #8a93a6;
+  --blue-accent: #4d8ef7;
+  --hairline-bg: rgba(255,255,255,.03);
+  --hairline: rgba(255,255,255,.07);
+  --blue-line: rgba(120,170,255,.45);
+  /* 第七批：分类卡 / 状态卡的强调色，默认中性；popup.js 会按游戏配色内联覆盖 */
+  --dxc: var(--line-strong);
+}
+
+:root[data-scheme="light"] {
+  color-scheme: light;
+  --bg: Canvas;
+  --card: #f7f9fc;
+  --card2: #eef2f8;
+  --sunken: #f0f3f8;
+  --tip-bg: #ffffff;
+  --line: #dce2ec;
+  --line-strong: #cbd3e0;
+  --line-hover: #b9c3d4;
+  --text: #1b2231;
+  --text-soft: #2b3446;
+  --muted: #5c677d;
+  --faint: #78849a;
+  --gold: #8a6500;
+  --gold-solid: #ffcb05;
+  --gold-soft: #a87900;
+  --gold-tint: rgba(120,88,0,.92);
+  --gold-wash: rgba(170,125,0,.12);
+  --gold-wash-soft: rgba(170,125,0,.09);
+  --gold-border: rgba(160,115,0,.55);
+  --on-gold: #201a00;
+  --green: #0a7a45;
+  --green-soft: #0a7a45;
+  --on-green: #ffffff;
+  --red: #c62830;
+  --danger: #b3261e;
+  --danger-soft: #b3261e;
+  --danger-strong: #a51c15;
+  --danger-line: rgba(179,38,30,.35);
+  --danger-glow: rgba(179,38,30,.18);
+  --blue: #1c5f9e;
+  --blue-soft: #1c5f9e;
+  --track: #c6cfdd;
+  --track-on: #2f7d4f;
+  --knob: #ffffff;
+  --warn: #8a5f00;
+  --warn-text: #6d4a00;
+  --warn-bg: #fff4d0;
+  --warn-line: #e0c264;
+  --warn-wash: rgba(190,145,0,.10);
+  /* 第二十批：功能卡片「运行状态」配色 */
+  --run-on-line: rgba(10,122,69,.45);
+  --run-on-wash: rgba(10,122,69,.08);
+  --run-wait-line: rgba(160,115,0,.45);
+  --run-wait-wash: rgba(170,125,0,.09);
+  --row-line: rgba(20,30,60,.08);
+  --log-line: rgba(20,30,60,.07);
+  --shadow: rgba(28,40,70,.18);
+  --filter-on-bg: #e2e8f2;
+  --filter-on-line: #c4cede;
+  --mod-bg: #e8edf5;
+  --mod-fg: #5c677d;
+  --lv-info-bg: #e3ebf8;
+  --lv-info-fg: #24508f;
+  --lv-ok-bg: #dff2e6;
+  --lv-ok-fg: #0a6b3d;
+  --lv-warn-bg: #fff1cf;
+  --lv-error-bg: #fde4e2;
+  --lv-debug-bg: #eceff4;
+  --lv-debug-fg: #5c677d;
+  --blue-accent: #1c5f9e;
+  --hairline-bg: rgba(30,50,100,.035);
+  --hairline: rgba(20,40,80,.12);
+  --blue-line: rgba(28,95,158,.5);
+  --dxc: var(--line-strong);
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-scheme="dark"]) {
+    color-scheme: light;
+    --bg: Canvas;
+    --card: #f7f9fc;
+    --card2: #eef2f8;
+    --sunken: #f0f3f8;
+    --tip-bg: #ffffff;
+    --line: #dce2ec;
+    --line-strong: #cbd3e0;
+    --line-hover: #b9c3d4;
+    --text: #1b2231;
+    --text-soft: #2b3446;
+    --muted: #5c677d;
+    --faint: #78849a;
+    --gold: #8a6500;
+    --gold-solid: #ffcb05;
+    --gold-soft: #a87900;
+    --gold-tint: rgba(120,88,0,.92);
+    --gold-wash: rgba(170,125,0,.12);
+    --gold-wash-soft: rgba(170,125,0,.09);
+    --gold-border: rgba(160,115,0,.55);
+    --on-gold: #201a00;
+    --green: #0a7a45;
+    --green-soft: #0a7a45;
+    --on-green: #ffffff;
+    --red: #c62830;
+    --danger: #b3261e;
+    --danger-soft: #b3261e;
+    --danger-strong: #a51c15;
+    --danger-line: rgba(179,38,30,.35);
+    --danger-glow: rgba(179,38,30,.18);
+    --blue: #1c5f9e;
+    --blue-soft: #1c5f9e;
+    --track: #c6cfdd;
+    --track-on: #2f7d4f;
+    --knob: #ffffff;
+    --warn: #8a5f00;
+    --warn-text: #6d4a00;
+    --warn-bg: #fff4d0;
+    --warn-line: #e0c264;
+    --warn-wash: rgba(190,145,0,.10);
+    --row-line: rgba(20,30,60,.08);
+    --log-line: rgba(20,30,60,.07);
+    --shadow: rgba(28,40,70,.18);
+    --filter-on-bg: #e2e8f2;
+    --filter-on-line: #c4cede;
+    --mod-bg: #e8edf5;
+    --mod-fg: #5c677d;
+    --lv-info-bg: #e3ebf8;
+    --lv-info-fg: #24508f;
+    --lv-ok-bg: #dff2e6;
+    --lv-ok-fg: #0a6b3d;
+    --lv-warn-bg: #fff1cf;
+    --lv-error-bg: #fde4e2;
+    --lv-debug-bg: #eceff4;
+    --lv-debug-fg: #5c677d;
+    --blue-accent: #1c5f9e;
+    --hairline-bg: rgba(30,50,100,.035);
+    --hairline: rgba(20,40,80,.12);
+    --blue-line: rgba(28,95,158,.5);
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  width: 360px;
+  max-height: 600px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 12px 12px 10px;
+  background: var(--bg);
+  color: var(--text);
+  font: 13px/1.45 system-ui, "Segoe UI", "Microsoft YaHei", sans-serif;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.brand { display: flex; align-items: center; gap: 8px; }
+.brand .mono { font-size: 20px; line-height: 1; }
+.brand b { display: block; font-size: 14px; }
+.brand small { color: var(--muted); font-size: 11px; }
+
+.pill {
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--muted);
+  font-size: 11px;
+  white-space: nowrap;
+}
+.pill.on { color: var(--on-green); background: var(--green); border-color: var(--green); font-weight: 700; }
+.pill.off { color: #fff; background: var(--red); border-color: var(--red); font-weight: 700; }
+.pill.warn { color: var(--gold); border-color: var(--warn-line); background: var(--warn-bg); }
+
+.hint {
+  margin: 0 0 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--warn-bg);
+  border: 1px solid var(--warn-line);
+  color: var(--warn-text);
+  font-size: 12px;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 8px 10px;
+  margin-bottom: 10px;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 3px 0;
+  font-size: 12px;
+}
+.row span { color: var(--muted); }
+.row b { font-variant-numeric: tabular-nums; }
+
+.toggles {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 4px 10px;
+  margin-bottom: 10px;
+}
+
+.sw {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+  cursor: pointer;
+}
+.sw:last-child { border-bottom: 0; }
+.sw input { position: absolute; opacity: 0; pointer-events: none; }
+
+.sw .track {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 19px;
+  margin-top: 1px;
+  border-radius: 999px;
+  background: var(--track);
+  position: relative;
+  transition: background .15s;
+}
+.sw .track::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: var(--knob);
+  transition: transform .15s;
+}
+.sw input:checked + .track { background: var(--track-on); }
+.sw input:checked + .track::after { transform: translateX(15px); background: #fff; }
+.sw input:focus-visible + .track { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+.sw .txt { display: block; }
+.sw .txt em { display: block; font-style: normal; font-size: 12.5px; }
+.sw .txt small { display: block; color: var(--muted); font-size: 11px; line-height: 1.35; }
+.sw.danger .txt em { color: var(--danger-soft); }
+
+.sw.star {
+  margin: -2px -6px 2px;
+  padding: 9px 6px;
+  border-radius: 8px;
+  background: linear-gradient(90deg, var(--gold-wash), transparent 70%);
+}
+.sw.star .txt em { color: var(--gold); font-weight: 700; }
+
+/* ---- 自动喂食 ---- */
+.feed {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 9px 10px;
+  margin-bottom: 10px;
+}
+
+.feed-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.feed-title b { font-size: 12.5px; }
+.feed-title small { display: block; color: var(--muted); font-size: 11px; line-height: 1.35; }
+
+.feed-list {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+  max-height: 210px;
+  overflow: auto;
+}
+.feed-list li {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 6px 0;
+  border-top: 1px solid var(--line);
+}
+.feed-list li:first-child { border-top: 0; }
+.feed-list li.empty {
+  display: block;
+  padding: 7px 0 3px;
+  color: var(--faint);
+  font-size: 11.5px;
+  border-top: 0;
+}
+
+.fi-ico {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 auto;
+  image-rendering: pixelated;
+  border-radius: 4px;
+  background: var(--sunken);
+}
+
+/* 果实效果浮层（插件自己的，不走浏览器原生 tooltip） */
+.feed-tip {
+  position: fixed;
+  z-index: 50;
+  max-width: 260px;
+  padding: 7px 9px;
+  border-radius: 8px;
+  background: var(--tip-bg);
+  border: 1px solid var(--line);
+  color: var(--text);
+  font-size: 11.5px;
+  line-height: 1.55;
+  white-space: pre-line;
+  box-shadow: 0 10px 24px var(--shadow);
+  pointer-events: none;
+}
+.fi-txt { flex: 1 1 auto; min-width: 0; }
+.fi-txt b {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.fi-txt small { color: var(--muted); font-size: 10.5px; font-variant-numeric: tabular-nums; }
+
+.mini { position: relative; display: inline-flex; flex: 0 0 auto; cursor: pointer; }
+.mini input { position: absolute; opacity: 0; pointer-events: none; }
+.mini .track {
+  width: 32px;
+  height: 18px;
+  border-radius: 999px;
+  background: var(--track);
+  position: relative;
+  transition: background .15s;
+}
+.mini .track::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--knob);
+  transition: transform .15s;
+}
+.mini input:checked + .track { background: var(--track-on); }
+.mini input:checked + .track::after { transform: translateX(14px); background: #fff; }
+.mini input:focus-visible + .track { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+.ug-note {
+  margin: 6px 0 2px;
+  padding: 6px 8px;
+  border-radius: 7px;
+  background: var(--sunken);
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.45;
+  min-height: 15px;
+  word-break: break-word;
+}
+
+.ug-btn {
+  width: 100%;
+  margin: 4px 0 6px;
+  padding: 7px 10px;
+  font-size: 12px;
+}
+
+/* 一键派遣 + 停止自动派遣，并排一行 */
+.ug-btns {
+  display: flex;
+  gap: 6px;
+}
+
+.ug-btns .ug-btn {
+  flex: 1 1 0;
+  min-width: 0;
+  margin: 4px 0 6px;
+  white-space: nowrap;
+}
+
+/* 第十二批：一键保留重复的结果提示
+ * 第二十二批：这块卡片改成一次性操作（不收运行状态），原来那条 .kd-state 结果框已删，
+ * 家族数改成右上角角标「开启 X/Y」 */
+.kd-note { min-height: 15px; margin-top: 4px; color: var(--muted); font-size: 11px; line-height: 1.5; }
+.kd-note.ok { color: var(--gold); }
+.kd-note.bad { color: var(--danger); }
+
+.ug-stop {
+  color: var(--danger);
+  border-color: var(--danger-line);
+}
+
+.ug-stop:disabled {
+  opacity: 0.45;
+  color: var(--muted);
+  border-color: var(--line);
+}
+
+/* 地下通道：4 个槽位的状态 */
+.ug-sum {
+  margin: 4px 0 4px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.ug-slots {
+  list-style: none;
+  margin: 0 0 6px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.ug-slots li {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: var(--sunken);
+  border-left: 2px solid var(--line-strong);
+  font-size: 11px;
+}
+
+.ug-slots li b {
+  flex: none;
+  width: 46px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-soft);
+}
+
+.ug-slots li em {
+  font-style: normal;
+  color: var(--muted);
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.ug-slots li { flex-wrap: wrap; }
+
+/* 槽位上的探险主题 + 属性徽标 */
+.ug-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.ug-meta i {
+  font-style: normal;
+  font-size: 10px;
+  line-height: 1;
+  padding: 2px 5px;
+  border-radius: 4px;
+  border: 1px solid var(--line);
+  background: var(--sunken);
+  color: var(--text-soft);
+  white-space: nowrap;
+}
+
+.ug-ty {
+  background: transparent;
+  color: var(--muted);
+}
+
+.ug-slots li.run { border-left-color: var(--blue); }
+.ug-slots li.run em { color: var(--blue-soft); }
+.ug-slots li.done { border-left-color: var(--gold); }
+.ug-slots li.done b { color: var(--gold); }
+.ug-slots li.done em { color: var(--gold-soft); }
+.ug-slots li.free { border-left-color: var(--green-soft); }
+.ug-slots li.locked { border-left-color: var(--line-strong); }
+.ug-slots li.locked b,
+.ug-slots li.locked em { color: var(--faint); }
+.ug-slots li.empty {
+  display: block;
+  border-left-color: var(--line-strong);
+  color: var(--faint);
+}
+
+.ug-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 2px 0 8px;
+  font-size: 12px;
+}
+
+/* 传说追踪：单选列表 */
+/* 第二十二批：这块本身就是「运行状态条」——左边一枚状态标签，右边是正在追的那只，
+   原来上面那条独立的 .run 已经并进来 */
+.leg-cur {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 10px;
+  margin: 2px 0 8px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--card2);
+}
+
+.leg-cur > .rst {
+  flex: none;
+  margin-top: 1px;
+  padding: 1px 7px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--card);
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .3px;
+  white-space: nowrap;
+}
+
+.leg-cur[data-state="on"] > .rst {
+  border-color: transparent;
+  background: var(--green);
+  color: var(--on-green);
+}
+
+.leg-cur[data-state="wait"] > .rst {
+  border-color: transparent;
+  background: var(--gold);
+  color: var(--on-gold);
+}
+
+.leg-cur[data-state="err"] > .rst { border-color: var(--danger-line); color: var(--danger); }
+
+.leg-cur.on {
+  border-color: var(--gold-border);
+  background: var(--gold-wash);
+}
+
+/* 第二十二批：原来名字前面那个 ◆ 装饰已去掉——左边的状态标签已经说明了一切 */
+
+.leg-cur-t {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.leg-cur-nm {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+/* 第二十四批：没在追的时候名字位是空的，整行收起；剩下的那句提示跟左边标签上下居中对齐 */
+.leg-cur-nm:has(> b:empty) { display: none; }
+.leg-cur:not(.on) { align-items: center; }
+.leg-cur:not(.on) > .rst { margin-top: 0; }
+
+.leg-cur-t b {
+  font-size: 13.5px;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.leg-cur.on .leg-cur-t b {
+  color: var(--gold);
+}
+
+/* 名字后面那串「挑战 N 次 · 击败它 N 次 · 被击败 N 次」 */
+.leg-cur-stat {
+  display: block;
+  font-size: 10.5px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  margin-top: 1px;
+}
+
+.leg-cur.on .leg-cur-stat {
+  color: var(--gold-tint);
+}
+
+.leg-cur-t small {
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.leg-stat {
+  margin: 0 0 6px;
+  font-size: 11px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 选中那只的挑战记录，挂在它自己那一行下面 */
+.leg-list li .leg-run {
+  display: block;
+  margin: 3px 0 2px 27px;
+  font-size: 10.5px;
+  font-style: normal;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.leg-list li.on .leg-run {
+  color: var(--gold-tint);
+}
+
+.leg-list {
+  list-style: none;
+  margin: 2px 0 6px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.leg-list li {
+  margin: 0;
+}
+
+.leg-list label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--card2);
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.leg-list label:hover {
+  border-color: var(--line-hover);
+}
+
+.leg-list input[type="radio"] {
+  flex: none;
+  margin: 0;
+  accent-color: var(--gold);
+}
+
+.leg-list b {
+  flex: none;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+/* 名字 + 属性牌子放一行，后面的「第 7 章 · 剩 12:30」还能留出位置 */
+.leg-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  overflow: hidden;
+}
+
+.leg-types {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  flex: none;
+}
+
+/* 和游戏里一样的小牌子：圆角、白字、底下压一道暗边 */
+.leg-types .ty {
+  display: inline-block;
+  padding: 1px 5px;
+  border-radius: 5px;
+  font-size: 9.5px;
+  font-weight: 700;
+  line-height: 1.5;
+  color: #fff;
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.35);
+  box-shadow: inset 0 -2px rgba(0, 0, 0, 0.2);
+  letter-spacing: 0.02em;
+}
+
+.leg-list small {
+  flex: none;
+  color: var(--muted);
+  font-size: 10.5px;
+}
+
+.leg-list li.on label {
+  border-color: var(--gold-border);
+  background: var(--gold-wash-soft);
+}
+
+.leg-list li.locked label,
+.leg-list li.got label {
+  cursor: not-allowed;   /* 已捕获 / 未解锁：点了没反应 */
+}
+
+/* 未解锁地区的：和「已获得」一样整行压灰，别让人以为是能点的 */
+.leg-list li.locked label {
+  opacity: 0.55;
+}
+
+.leg-list li.locked b {
+  color: var(--muted);
+}
+
+.leg-list li.got b {
+  color: var(--green);
+}
+
+/* 地区小标题 */
+.leg-list li.leg-grp {
+  margin: 8px 0 2px;
+  padding: 0 2px;
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.leg-list li.leg-grp::before {
+  content: "";
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  margin-right: 5px;
+  border-radius: 1px;
+  background: var(--muted);
+  vertical-align: 1px;
+}
+
+.leg-list li.got label {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.leg-list input[type="radio"]:disabled {
+  cursor: not-allowed;
+}
+
+.ug-row label {
+  flex: none;
+  color: var(--text);
+}
+
+.ug-row input[type="number"] {
+  width: 62px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--text);
+  font: inherit;
+  text-align: center;
+}
+
+.ug-row select {
+  max-width: 132px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--text);
+  font: inherit;
+}
+
+.ug-row .unit {
+  color: var(--muted);
+}
+
+.ug-row em {
+  margin-left: auto;
+  color: var(--muted);
+  font-style: normal;
+  font-size: 11px;
+  text-align: right;
+}
+
+.sw.sub {
+  margin-top: 6px;
+  padding: 7px 9px;
+  border-radius: 8px;
+  background: var(--sunken);
+}
+.sw.sub .txt em { font-size: 11.5px; }
+.sw.sub .txt small { font-size: 10.5px; }
+
+.actions { display: flex; gap: 8px; margin-bottom: 10px; }
+button {
+  flex: 1;
+  padding: 9px 10px;
+  border-radius: 9px;
+  border: 1px solid var(--line);
+  background: var(--card2);
+  color: var(--text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+button:hover { filter: brightness(1.12); }
+button:active { transform: translateY(1px); }
+button:disabled { opacity: .45; cursor: not-allowed; }
+button.primary { background: var(--gold-solid); border-color: var(--gold-solid); color: var(--on-gold); }
+button.ghost { background: transparent; }
+
+.logs {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+.logs b { font-size: 12px; color: var(--muted); font-weight: 600; }
+.logs ul {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+  max-height: 132px;
+  overflow: auto;
+}
+.logs li {
+  display: flex;
+  gap: 8px;
+  padding: 2px 0;
+  font-size: 11.5px;
+  color: var(--text-soft);
+}
+.logs li time { color: var(--faint); font-variant-numeric: tabular-nums; flex: 0 0 auto; }
+.logs li.empty { color: var(--faint); }
+
+footer {
+  margin-top: 9px;
+  text-align: center;
+  color: var(--faint);
+  font-size: 10.5px;
+}
+/* 第六十九批：权益声明 —— 免费提供、付费都是被骗，附下载群号 */
+footer p { margin: 0; }
+footer p + p { margin-top: 3px; }
+footer .rights {
+  font-size: 11px;
+  color: var(--gold);
+  line-height: 1.5;
+}
+footer .rights b {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .5px;
+  user-select: all;
+}
+footer .fine { opacity: .82; }
+
+/* ---------------- 本系威力排名 ---------------- */
+.stab-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 2px 0 8px;
+}
+
+.stab-tab {
+  flex: none;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--card2);
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.4;
+  cursor: pointer;
+  opacity: 0.78;
+  transition: opacity 0.12s, background 0.12s;
+}
+
+.stab-tab:hover { opacity: 1; }
+
+.stab-tab.on {
+  color: #fff;
+  border-color: transparent;
+  opacity: 1;
+  box-shadow: inset 0 -2px rgba(0, 0, 0, 0.25);
+}
+
+table.stab {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+  table-layout: auto;
+}
+
+table.stab th {
+  font-size: 10px;
+  color: var(--muted);
+  font-weight: 600;
+  text-align: left;
+  padding: 2px 3px;
+  border-bottom: 1px solid var(--line);
+}
+
+table.stab th.r, table.stab th.v { text-align: center; }
+table.stab th.v { text-align: right; }
+table.stab th.rare { text-align: center; }
+
+table.stab td {
+  padding: 3px;
+  border-bottom: 1px solid var(--row-line);
+  vertical-align: middle;
+  color: var(--text);
+}
+
+table.stab td.r {
+  width: 16px;
+  text-align: center;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+table.stab tr.first td.r { color: var(--gold); font-weight: 700; }
+table.stab tr.first td.n { color: var(--gold); }
+
+table.stab td.n {
+  max-width: 70px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+table.stab td.m {
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+table.stab td.m b { color: var(--text); font-weight: 600; }
+table.stab td.m i { font-style: normal; font-size: 9.5px; margin-left: 3px; opacity: 0.85; }
+
+/* v1.49：稀有度列——游戏原版徽章：彩色描边胶囊 + 档位中文名 */
+table.stab td.rare {
+  width: 42px;
+  text-align: center;
+  padding: 2px 1px;
+}
+table.stab td.rare .stab-rare-pill {
+  display: inline-block;
+  min-width: 34px;
+  padding: 1px 4px;
+  border: 1px solid var(--rc, #9aa4b1);
+  border-radius: 9px;
+  color: var(--rc, #9aa4b1);
+  background: transparent;
+  font-size: 9.5px;
+  line-height: 1.25;
+  font-weight: 600;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+table.stab td.v {
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+table.stab td.v b { font-weight: 700; }
+
+table.stab td.v .bar {
+  display: inline-block;
+  height: 6px;
+  border-radius: 3px;
+  margin-left: 5px;
+  vertical-align: middle;
+  opacity: 0.5;
+}
+
+.stab-eg { color: var(--gold); opacity: 0.85; }
+
+/* 地下通道「优先执行」提示已在第二十二批删除（功能描述里已经写了同样的顺序） */
+
+/* 「被击败 N 次」：0 次就是普通灰字，>0 标红加粗，别让人看不见 */
+.leg-lose {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.leg-lose.hot {
+  color: var(--danger-strong);
+  font-weight: 800;
+  text-shadow: 0 0 8px var(--danger-glow);
+}
+
+.leg-cur:not(.on) .leg-lose.hot {
+  color: var(--danger-soft);
+}
+
+/* 1.9.55：收藏文件夹 + 四地区异色进度 */
+#fav-clear { width: 100%; }
+.ug-slots li.off { border-left-color: var(--line-strong); opacity: .72; }
+.ug-slots li.off em { color: var(--faint); }
+
+/* 刷钱（1.9.68） */
+.farm-mode { display: flex; flex-direction: column; gap: 6px; margin: 8px 0 6px; }
+.farm-pick {
+  display: flex; align-items: flex-start; gap: 8px; cursor: pointer;
+  padding: 7px 9px; border-radius: 8px;
+  background: var(--hairline-bg);
+  border: 1px solid var(--hairline);
+}
+.farm-pick:hover { border-color: var(--blue-line); }
+.farm-pick input { margin: 2px 0 0; accent-color: var(--blue-accent); }
+.farm-pick b { display: block; font-size: 12px; font-weight: 700; color: var(--text); }
+.farm-pick em { display: block; font-style: normal; font-size: 11px; line-height: 1.45; opacity: .62; margin-top: 2px; }
+/* 第三十八批：图鉴捕捉两个模式互斥的视觉——
+ *   .dim   没选中的那块：整块压灰、去掉底色，一眼看出现在走的是另一个模式（仍可点，点了就切）；
+ *   .lock  功能跑起来之后的锁定态：两块都灰、都不能点（半路换模式没意义）；
+ *   .off   「指定宝可梦」那一行输入框，在「一键补全」模式下也压灰。 */
+#pane-dex .farm-pick { transition: opacity .12s ease, background-color .12s ease; }
+#pane-dex .farm-pick.dim {
+  opacity: .45;
+  background: transparent;
+  border-style: dashed;
+}
+#pane-dex .farm-pick.dim b { color: var(--muted); }
+#pane-dex .farm-pick.dim:hover { opacity: .82; border-color: var(--blue-line); }
+#pane-dex .farm-pick.lock { opacity: .34; cursor: not-allowed; }
+#pane-dex .farm-pick.lock:hover { border-color: var(--hairline); }
+#pane-dex .farm-pick.lock.dim { background: transparent; }
+/* 第四十八批：功能跑起来时「选中的那一块」不再压灰，只是不能再点（改模式要先停）。
+ * 原来两块一起变 .34，用户看着自己选的那个也灰了，会以为选错 / 没生效。 */
+#pane-dex .farm-pick.run {
+  opacity: 1;
+  cursor: default;
+  border-color: var(--blue-line);
+  background: var(--hairline-bg);
+}
+#pane-dex .farm-pick.run:hover { border-color: var(--blue-line); }
+#pane-dex .farm-pick.run em { opacity: .62; }
+#pane-dex .dex-target-row.off { opacity: .45; }
+#pane-dex .dex-target-row.off:hover { opacity: .85; }
+/* 第七十二批：.dex-target-row 自己是 display:flex，浏览器默认那条
+ * [hidden] { display: none } 会被 display 覆盖 —— 所以「只在指定宝可梦模式露出来」
+ * 必须显式补一条，否则 row.hidden 压根藏不住（第一版就踩了这个坑）。 */
+#pane-dex .dex-target-row[hidden],
+#pane-dex .dex-resolve[hidden],
+#pane-dex .dx-rotom[hidden] { display: none; }
+#pane-dex input:disabled { cursor: not-allowed; }
+.farm-stat { list-style: none; margin: 6px 0 8px; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 4px 10px; }
+.farm-stat li { font-size: 11px; line-height: 1.5; opacity: .8; display: flex; justify-content: space-between; gap: 6px; }
+.farm-stat li span { opacity: .66; }
+.farm-stat li b { font-weight: 700; color: var(--warn); }
+.farm-stat li.empty { grid-column: 1 / -1; opacity: .5; }
+/* ============ v1.10.2 面板重排 ============ */
+/* 第八十九批：手机上（触摸屏）弹窗差不多就是整屏，宽度交给浏览器自己撑，
+ * 写死 380px 在 360dp 的安卓机上会横向溢出。桌面弹窗仍旧 380×620。 */
+body { width: 380px; max-height: 620px; padding: 10px 12px 12px; }
+
+@media (pointer: coarse) {
+  body { width: auto; max-width: 100%; max-height: none; }
+}
+
+.top { margin-bottom: 9px; }
+.pills { display: flex; align-items: center; gap: 5px; }
+/* 第三十三批：头像换成「宝可梦球 + 黄色闪电」的插件图标（icons/icon48.png），
+ * 上面那颗纯 CSS 闪电方块不再需要。 */
+.brand .mark {
+  flex: none;
+  display: block;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  object-fit: contain;
+}
+/* 版本号下面那行小字：作者 */
+.brand .by {
+  display: block;
+  margin-top: 1px;
+  color: var(--faint);
+  font-size: 10px;
+  line-height: 1.35;
+}
+.pill.compat { cursor: pointer; }
+.pill.compat[data-level="ok"] { color: var(--on-green); background: var(--green); border-color: var(--green); font-weight: 700; }
+.pill.compat[data-level="warn"] { color: var(--on-gold); background: var(--gold-solid); border-color: var(--gold-solid); font-weight: 700; }
+.pill.compat[data-level="wait"] { color: var(--muted); }
+
+/* 状态栏：3 列网格，比原来的逐行列表省一半高度 */
+.status-card {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.stat {
+  min-width: 0;
+  padding: 7px 8px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--card);
+}
+.stat small { display: block; margin-bottom: 2px; color: var(--muted); font-size: 10.5px; }
+.stat b {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-variant-numeric: tabular-nums;
+}
+.stat[data-state="ok"] b { color: var(--green); }
+.stat[data-state="warn"] b { color: var(--gold); }
+.stat[data-state="off"] b { color: var(--danger-soft); }
+
+.compat-detail {
+  margin: -4px 0 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--card);
+  font-size: 11px;
+  line-height: 1.55;
+}
+.compat-detail .ci { display: flex; gap: 6px; padding: 1px 0; }
+.compat-detail .ci b { flex: 0 0 88px; font-weight: 500; color: var(--muted); }
+.compat-detail .ci i { font-style: normal; }
+.compat-detail .ci.ok i { color: var(--green); }
+.compat-detail .ci.miss i { color: var(--danger); }
+.compat-detail .ci.na i { color: var(--faint); }
+.compat-detail .cnote { margin: 5px 0 2px; color: var(--gold); }
+.compat-detail .compat-copy { margin-top: 6px; }
+
+/* 第二十五批：三组卡片的组标题（置顶 / 互斥 / 一次性），只做分隔，不占交互 */
+.sec-label {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin: 12px 2px 6px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .4px;
+}
+.sec-label::after {
+  content: '';
+  flex: 1 1 auto;
+  height: 1px;
+  background: var(--line);
+  transform: translateY(-2px);
+}
+.sec-label em {
+  font-style: normal;
+  font-weight: 400;
+  font-size: 10.5px;
+  color: var(--faint);
+  letter-spacing: 0;
+}
+/* 第三十二批：分组标题右边的「一键关闭」（目前只有「自动化任务」用到）。
+ * 这一行塞了标题 + 描述 + 按钮，360px 下会把标题挤成两行——所以让带按钮的标题行
+ * 允许换行，描述整句落到第二行：第一行「标题 —— 按钮」，第二行描述。 */
+.sec-label.has-act {
+  flex-wrap: wrap;
+  align-items: center;
+  row-gap: 1px;
+}
+.sec-label.has-act::after { order: 1; }
+.sec-label.has-act .sec-stop { order: 2; }
+.sec-label.has-act em { order: 3; flex: 1 1 100%; }
+.sec-label .sec-stop {
+  order: 9;
+  flex: none;
+  align-self: center;
+  margin-left: 4px;
+  padding: 2px 9px;
+  border: 1px solid var(--danger-line);
+  border-radius: 999px;
+  background: rgba(255, 107, 107, .12);
+  color: var(--danger);
+  font-family: inherit;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: .2px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.sec-label .sec-stop:hover {
+  background: rgba(255, 107, 107, .22);
+  color: #fff;
+  border-color: var(--danger);
+}
+.sec-label .sec-stop:disabled {
+  opacity: .5;
+  cursor: default;
+  background: transparent;
+  color: var(--muted);
+  border-color: var(--line);
+}
+
+/* 可折叠分组：默认收起不常用的，展开状态会记住 */
+details.group, details.pane {
+  margin-bottom: 8px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--card);
+  overflow: hidden;
+}
+details > summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  list-style: none;
+  cursor: pointer;
+  font-size: 12.5px;
+  user-select: none;
+}
+details > summary::-webkit-details-marker { display: none; }
+details > summary::before {
+  content: "";
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-right: 1.5px solid var(--muted);
+  border-bottom: 1.5px solid var(--muted);
+  transform: rotate(-45deg);
+  transition: transform .15s;
+}
+details[open] > summary::before { transform: rotate(45deg); }
+details > summary b { font-weight: 600; }
+/* 第二十批：功能卡片统一规范
+ * 收起的标题行：左边功能名，最右边运行状态徽标（.brief）
+ *   绿=运行中 / 金=等待中 / 灰=未启动 / 红=未连接
+ * 展开后固定三段：第一行功能描述（.pane-hint）→ 第二行运行状态（.run）→ 下面才是各种选项 */
+.brief {
+  margin-left: auto;
+  /* 摘要文字每秒会被读秒刷新，固定最小宽度 + 等宽数字，避免字数变化带着整行左右抽动 */
+  min-width: 76px;
+  max-width: 176px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+  font-size: 10.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.brief[data-state]::before {
+  content: "";
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  margin-right: 4px;
+  vertical-align: 1px;
+  background: currentColor;
+}
+.brief[data-state="off"]::before,
+.brief[data-state="idle"]::before { display: none; }
+.brief[data-state="on"] { color: var(--green); font-weight: 700; }
+.brief[data-state="wait"] { color: var(--gold); font-weight: 600; }
+.brief[data-state="err"] { color: var(--danger); font-weight: 600; }
+.brief[data-state="idle"] { color: var(--faint); }
+
+/* 运行状态行：一枚状态标签 + 一句「正在做什么」
+   第二十二批：改成两列栅格——标签永远和「正在做什么」同一行，长文字不会把标签挤到单独一行去。
+   第三十五批：原来第二段（.rx）那句今日次数 / 最近一批已经并进 .rt 同一句，这一行只剩两列 */
+.run {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: baseline;
+  column-gap: 7px;
+  row-gap: 2px;
+  margin: 0 0 7px;
+  padding: 4px 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--sunken);
+  font-size: 11px;
+  line-height: 1.45;
+}
+.run > .rst {
+  flex: none;
+  padding: 1px 7px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--card2);
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .3px;
+  white-space: nowrap;
+}
+.run > .rt {
+  min-width: 0;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.run > .rt[hidden] { display: none; }
+.run[data-state="on"] { border-color: var(--run-on-line); background: var(--run-on-wash); }
+.run[data-state="on"] > .rst {
+  border-color: transparent;
+  background: var(--green);
+  color: var(--on-green);
+}
+.run[data-state="on"] > .rt { color: var(--text-soft); }
+.run[data-state="wait"] { border-color: var(--run-wait-line); background: var(--run-wait-wash); }
+.run[data-state="wait"] > .rst {
+  border-color: transparent;
+  background: var(--gold);
+  color: var(--on-gold);
+}
+.run[data-state="wait"] > .rt { color: var(--text-soft); }
+.run[data-state="err"] { border-color: var(--danger-line); background: var(--warn-wash); }
+.run[data-state="err"] > .rst { border-color: var(--danger-line); color: var(--danger); }
+details.group .toggles {
+  margin: 0;
+  padding: 2px 10px;
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-radius: 0;
+}
+.pane-body { padding: 8px 10px 10px; border-top: 1px solid var(--line); }
+.pane-hint { margin: 0 0 5px; color: var(--muted); font-size: 11px; line-height: 1.4; }
+
+/* 日志：级别过滤 + 模块标签 + 去重计数 */
+.logs-head { display: flex; align-items: center; gap: 8px; }
+.log-count { color: var(--faint); font-size: 10.5px; font-variant-numeric: tabular-nums; }
+.log-tools { margin-left: auto; display: flex; gap: 5px; }
+button.tiny {
+  flex: none;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: var(--card2);
+  font-size: 10.5px;
+  font-weight: 500;
+}
+.log-filters { display: flex; gap: 4px; margin: 7px 0 4px; }
+.log-filters button {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 3px 2px;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 10.5px;
+  font-weight: 500;
+}
+.log-filters button.on { background: var(--filter-on-bg); color: var(--text); border-color: var(--filter-on-line); }
+.logs ul { max-height: 190px; }
+#log li {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 3px 0;
+  border-bottom: 1px solid var(--log-line);
+  font-size: 11.5px;
+}
+#log li time { flex: 0 0 46px; color: var(--faint); font-variant-numeric: tabular-nums; }
+#log li .lv { flex: 0 0 30px; padding: 0 2px; border-radius: 4px; font-size: 10px; text-align: center; }
+#log li .msg { flex: 1 1 auto; min-width: 0; word-break: break-word; }
+#log li .mod {
+  display: inline-block;
+  margin-right: 4px;
+  padding: 0 3px;
+  border-radius: 3px;
+  background: var(--mod-bg);
+  color: var(--mod-fg);
+  font-size: 9.5px;
+  font-style: normal;
+}
+#log li .n { flex: none; color: var(--gold); font-size: 10px; }
+#log li.lv-info .lv { background: var(--lv-info-bg); color: var(--lv-info-fg); }
+#log li.lv-ok .lv { background: var(--lv-ok-bg); color: var(--lv-ok-fg); }
+#log li.lv-warn .lv { background: var(--lv-warn-bg); color: var(--warn); }
+#log li.lv-error .lv { background: var(--lv-error-bg); color: var(--danger); }
+#log li.lv-debug .lv { background: var(--lv-debug-bg); color: var(--lv-debug-fg); }
+#log li.lv-warn .msg { color: var(--warn); }
+#log li.lv-error .msg { color: var(--danger); }
+#log li.empty { display: block; border: 0; color: var(--faint); }
+
+/* 战力榜：固定列宽，表头吸顶，数值列不再乱跳
+   v1.49 重新分配列宽：名字列加宽防截断，稀有度胶囊有稳定位置，
+   招式/数值列收紧但保证「招式名+威力+类别+命中」完整显示。
+   总宽约 20+92+46+122+66 = 346px，380px 弹窗内还有余量。 */
+table.stab { table-layout: fixed; }
+table.stab th.r, table.stab td.r { width: 18px; padding-left: 0; padding-right: 0; }
+table.stab th.n, table.stab td.n { width: 108px; max-width: none; font-size: 10.5px; padding-left: 2px; padding-right: 1px; }
+table.stab th.rare, table.stab td.rare { width: 42px; padding-left: 0; padding-right: 0; }
+table.stab th.m, table.stab td.m { width: 120px; padding-left: 2px; padding-right: 2px; }
+table.stab th.v, table.stab td.v { width: 62px; padding-left: 1px; padding-right: 1px; }
+table.stab thead th { position: sticky; top: 0; z-index: 1; background: var(--card); }
+table.stab td.v .bar { max-width: 18px; margin-left: 2px; }
+/* 名字列：立绘固定不收缩，文字用省略号兜底极端长名 */
+table.stab td.n .mon-art { flex: none; }
+/* 招式子项不换行被砍：威力与命中紧跟招式名，字号收紧确保一行放得下 */
+table.stab td.m b { font-size: 10.5px; }
+table.stab td.m i { font-size: 9px; margin-left: 2px; }
+
+/* ===== 外观切换按钮 ===== */
+.theme-btn {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border-radius: 7px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--muted);
+  font: 14px/1 system-ui, "Segoe UI", sans-serif;
+  font-weight: 600;
+  cursor: pointer;
+}
+.theme-btn:hover { color: var(--gold); border-color: var(--gold-border); }
+.theme-btn[data-mode="auto"] { color: var(--blue); }
+
+/* 第五十二批：标题栏上的「刷新游戏页」——传统刷新图标，跟外观键同规格同位置，
+ * 不再是一颗写字的宽按钮；需要刷新时（插件刚装/更新）描一圈金色（.ask）。 */
+.icon-btn {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border-radius: 7px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.icon-btn .ico {
+  display: block;
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.icon-btn:hover { color: var(--gold); border-color: var(--gold-border); }
+.icon-btn.ask {
+  color: var(--warn-text);
+  border-color: var(--warn-line);
+  background: var(--warn-bg);
+}
+.icon-btn:disabled { opacity: .45; cursor: not-allowed; }
+
+/* ===== 第二批：图鉴捕捉面板 ===== */
+.dex-target-row { display: flex; gap: 6px; margin: 8px 0 2px; }
+.dex-target-row input[type="text"] {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 5px 8px;
+  border-radius: 7px;
+  border: 1px solid var(--line);
+  background: var(--sunken);
+  color: var(--text);
+  font-size: 12px;
+}
+.dex-target-row input[type="text"]::placeholder { color: var(--faint); }
+.dex-resolve { margin: 0 0 4px; font-size: 10.5px; color: var(--faint); line-height: 1.4; }
+/* 第二十一批：速度 / 进度检查 / 单只超时 / 无进展重刷 四项参数从界面移除 */
+.dex-checks { display: grid; gap: 3px; margin: 8px 0 8px; }
+.dex-checks label {
+  display: flex;
+  align-items: flex-start;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--text-soft);
+  line-height: 1.4;
+}
+.dex-checks input { flex: none; margin: 2px 0 0; accent-color: var(--blue-accent); }
+/* 第九十九批：状态行与下面那句说明合并成一条（#dex-note），.dex-sum 这块不再需要 */
+.dex-plan { list-style: none; margin: 0; padding: 0; max-height: 172px; overflow: auto; }
+.dex-plan li {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 4px 7px;
+  border-left: 2px solid var(--line-strong);
+  border-bottom: 1px solid var(--row-line);
+  font-size: 11px;
+}
+.dex-plan li .nm {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dex-plan li .pr { flex: none; color: var(--gold); font-variant-numeric: tabular-nums; }
+.dex-plan li .cd { flex: none; color: var(--warn); font-size: 10px; }
+.dex-plan li.locked { border-left-color: var(--line-strong); opacity: .6; }
+.dex-plan li.cur { border-left-color: var(--gold); background: var(--gold-wash); }
+.dex-plan li.done { border-left-color: var(--green-soft); }
+.dex-plan li.done .pr { color: var(--green); }
+.dex-plan li.empty { display: block; border: 0; color: var(--faint); }
+
+/* ===== 第三批：培育屋监测面板 ===== */
+.ns-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; margin: 8px 0 7px; }
+.ns-cell {
+  min-width: 0;
+  padding: 5px 7px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--sunken);
+}
+.ns-cell small { display: block; color: var(--faint); font-size: 10px; }
+.ns-cell b {
+  display: block;
+  margin-top: 2px;
+  color: var(--text);
+  font-size: 12.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ns-cell b.gold { color: var(--gold); }
+.ns-sec {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px;
+  margin: 9px 0 3px;
+  padding-bottom: 3px;
+  border-bottom: 1px solid var(--line);
+  font-size: 11.5px;
+}
+.ns-sec b { color: var(--text-soft); }
+.ns-sec span { color: var(--faint); font-size: 10px; }
+.ns-list { list-style: none; margin: 0; padding: 0; max-height: 168px; overflow: auto; }
+.ns-list li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  border-left: 2px solid var(--line-strong);
+  border-bottom: 1px solid var(--row-line);
+  font-size: 11px;
+}
+.ns-list li .nm {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ns-list li .tm { flex: none; color: var(--muted); font-size: 10.5px; font-variant-numeric: tabular-nums; }
+.ns-list li .tag { flex: none; color: var(--faint); font-size: 10px; }
+.ns-list li.sh { border-left-color: var(--gold); background: var(--gold-wash-soft); }
+.ns-list li.sh .nm { color: var(--gold); font-weight: 700; }
+.ns-list li.rd { border-left-color: var(--green); }
+.ns-list li.rd .tm { color: var(--green); font-weight: 700; }
+.ns-list li.empty { display: block; border: 0; color: var(--faint); }
+.ns-mini { flex: none; width: 46px; height: 4px; border-radius: 3px; background: var(--track); overflow: hidden; }
+.ns-mini i { display: block; height: 100%; background: var(--gold-solid); }
+.ns-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 8px; margin-top: 5px; }
+.ns-stats div { display: flex; justify-content: space-between; gap: 5px; font-size: 10.5px; color: var(--muted); }
+.ns-stats div b { color: var(--text-soft); font-variant-numeric: tabular-nums; }
+.ns-events { max-height: 132px; }
+.ns-events li .tm { flex: none; width: 42px; color: var(--faint); }
+.ns-checks { display: grid; gap: 3px; margin: 10px 0 8px; }
+/* 第四十七批：开关变多了，把「显示类」和「自动化类」用一条虚线分开 */
+.ns-checks label.ns-sep { margin-top: 5px; padding-top: 5px; border-top: 1px dashed var(--line); }
+.ns-checks label {
+  display: flex;
+  align-items: flex-start;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--text-soft);
+  line-height: 1.4;
+}
+.ns-checks input { flex: none; margin: 2px 0 0; accent-color: var(--blue-accent); }
+.ns-warn { color: var(--warn); }
+
+/* ===== 第四批：黑市扫货面板 ===== */
+.mk-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; margin: 8px 0 7px; }
+.mk-cell {
+  min-width: 0;
+  padding: 5px 7px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--sunken);
+}
+.mk-cell small { display: block; color: var(--faint); font-size: 10px; }
+.mk-cell b {
+  display: block;
+  margin-top: 2px;
+  color: var(--text);
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mk-cell b.gold { color: var(--gold); }
+.mk-sum { margin: 0 0 6px; color: var(--muted); font-size: 10.5px; line-height: 1.4; }
+.mk-sec {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px;
+  margin: 9px 0 3px;
+  padding-bottom: 3px;
+  border-bottom: 1px solid var(--line);
+  font-size: 11.5px;
+}
+.mk-sec b { color: var(--text-soft); }
+.mk-sec span { color: var(--faint); font-size: 10px; }
+.mk-rules, .mk-hits, .mk-events { list-style: none; margin: 0; padding: 0; max-height: 160px; overflow: auto; }
+.mk-hits { max-height: 132px; }
+.mk-events { max-height: 118px; }
+.mk-rules li, .mk-hits li, .mk-events li {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 6px;
+  border-left: 2px solid var(--line-strong);
+  border-bottom: 1px solid var(--row-line);
+  font-size: 11px;
+}
+.mk-rules li .nm, .mk-hits li .nm, .mk-events li .nm {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mk-rules li .pr, .mk-hits li .pr { flex: none; color: var(--gold); font-variant-numeric: tabular-nums; font-size: 10.5px; }
+.mk-rules li.off { opacity: .55; }
+.mk-rules li .tag { flex: none; color: var(--faint); font-size: 10px; }
+/* 第三十批：意向行第二行「意向 99 · 已买 1」——塞进 .nm 里换行，免得把价格和「删」挤出去 */
+.mk-rules li .mk-meta {
+  display: block;
+  margin-top: 1px;
+  color: var(--faint);
+  font-family: inherit;
+  font-size: 10px;
+  font-style: normal;
+  line-height: 1.25;
+  font-variant-numeric: tabular-nums;
+  white-space: normal;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mk-hits li.sh { border-left-color: var(--gold); background: var(--gold-wash-soft); }
+.mk-hits li.sh .nm { color: var(--gold); font-weight: 700; }
+.mk-hits li.done { opacity: .55; }
+.mk-events li .tm { flex: none; width: 46px; color: var(--faint); font-size: 10px; font-variant-numeric: tabular-nums; }
+/* 第三十批：「命中商品」改成一笔一笔的购买记录 */
+.mk-hits li.buy .tm { flex: none; width: 46px; color: var(--faint); font-size: 10px; font-variant-numeric: tabular-nums; }
+.mk-hits li.buy { border-left-color: var(--green); }
+.mk-events li.ev-ok .nm { color: var(--green); }
+.mk-events li.ev-warn .nm { color: var(--warn); }
+.mk-rules li.empty, .mk-hits li.empty, .mk-events li.empty { display: block; border: 0; color: var(--faint); }
+.mk-act {
+  flex: none;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--card2);
+  color: var(--muted);
+  font: 10px/1.4 inherit;
+  padding: 1px 5px;
+  cursor: pointer;
+}
+.mk-act.del { color: var(--danger); border-color: var(--danger-line); }
+/* 第三十批：多了「数量」一格（默认 1、最高 99），弹窗只有 360px 宽，
+ * 所以拆成两行：第一行 宝可梦 / 意向价 / 数量，第二行 闪光 / 添加 */
+.mk-add { display: grid; grid-template-columns: minmax(0, 1fr) 76px 54px; gap: 4px; margin: 7px 0 2px; }
+.mk-add #mk-shiny { grid-column: 1 / 3; }
+.mk-add #mk-add-btn { grid-column: 3; }
+.mk-add input, .mk-add select, .mk-opts input, .mk-opts select {
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--sunken);
+  color: var(--text);
+  font: 11px/1.4 inherit;
+  padding: 4px 6px;
+}
+.mk-add .tiny { width: auto; padding: 0 8px; }
+.mk-resolve { margin: 2px 0 6px; color: var(--faint); font-size: 10px; line-height: 1.4; }
+.mk-opts { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 8px; margin: 6px 0 8px; }
+.mk-opts label { display: flex; align-items: center; gap: 4px; font-size: 10.5px; color: var(--muted); min-width: 0; }
+.mk-opts input, .mk-opts select { flex: 1 1 auto; width: auto; max-width: 78px; padding: 3px 4px; }
+.mk-opts .unit { flex: none; color: var(--faint); font-size: 10px; }
+.mk-checks { display: grid; gap: 3px; margin: 0 0 9px; }
+.mk-checks label { display: flex; align-items: flex-start; gap: 5px; font-size: 11px; color: var(--text-soft); line-height: 1.4; }
+.mk-checks input { flex: none; margin: 2px 0 0; accent-color: var(--blue-accent); }
+
+
+/* ---------------- 第五批：道具刷取 / 树果刷取 ---------------- */
+.sg-grid, .fm-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; margin: 7px 0; }
+.sg-cell, .fm-cell { min-width: 0; padding: 5px 7px; border: 1px solid var(--line); border-radius: 8px; background: var(--sunken); }
+.sg-cell small, .fm-cell small { display: block; color: var(--faint); font-size: 10px; }
+.sg-cell b, .fm-cell b { display: block; margin-top: 2px; color: var(--text); font-size: 12px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sg-cell b.gold, .fm-cell b.gold { color: var(--gold); }
+.sg-checks, .fm-checks { display: grid; gap: 4px; margin: 7px 0; font-size: 11.5px; color: var(--text-soft); }
+.sg-checks label, .fm-checks label { display: flex; align-items: center; gap: 6px; }
+.sg-checks input[type="number"], .fm-opts input[type="number"], .fm-opts select {
+  width: 78px; padding: 3px 5px; border: 1px solid var(--line); border-radius: 6px;
+  background: var(--card); color: var(--text); font-size: 11.5px;
+}
+.sg-logs, .fm-logs { list-style: none; margin: 6px 0; padding: 0; max-height: 132px; overflow: auto; }
+.sg-logs li, .fm-logs li { display: flex; gap: 6px; padding: 3px 6px; border-bottom: 1px solid var(--row-line);
+  font-size: 11px; color: var(--text-soft); }
+.sg-logs li b, .fm-logs li b { color: var(--faint); font-weight: 400; flex: 0 0 auto; }
+.fm-sec { display: flex; align-items: baseline; justify-content: space-between; gap: 8px;
+  margin: 10px 0 5px; padding-bottom: 4px; border-bottom: 1px solid var(--hairline); }
+.fm-sec b { font-size: 12px; color: var(--text); }
+.fm-sec span { font-size: 10.5px; color: var(--faint); }
+/* 第五十批：左边那两个字（「意向道具」「获取期望排行」）不许被右侧长说明挤成两行，
+ * 说明自己换行 / 右对齐，占满剩下的宽度。 */
+.fm-sec b { flex: 0 0 auto; white-space: nowrap; }
+.fm-sec span { flex: 1 1 auto; min-width: 0; text-align: right; line-height: 1.4; }
+.fm-targets { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; }
+.fm-targets label { display: flex; align-items: center; gap: 5px; min-width: 0; padding: 3px 6px;
+  border: 1px solid var(--line); border-radius: 7px; background: var(--sunken);
+  font-size: 11px; color: var(--text-soft); cursor: pointer; }
+.fm-targets label.on { border-color: var(--gold-border); background: var(--gold-wash-soft); color: var(--text); }
+/* 第二十七批：树果行右边要写「捕捉 ×1.25 · 有 12」，比道具那边的概率串长，
+ * 给个可缩小的空间，实在放不下就省略号，别把名字挤掉。 */
+.fm-targets label small { margin-left: auto; color: var(--faint); font-size: 10px;
+  white-space: nowrap; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+/* 第二十六批：稀有道具「仅限获得一次」——
+ * 已获得 / 地图未解锁的一律变灰发黑、点不动，右边写清原因；正在找的那个描金边。 */
+.fm-targets label.dim { border-color: var(--line); background: var(--sunken); color: var(--faint);
+  opacity: .5; filter: grayscale(1); cursor: default; }
+.fm-targets label.dim input { cursor: default; }
+.fm-targets label.dim small { color: var(--faint); font-weight: 700; opacity: 1; }
+/* 第五十七批：白金宝珠这类带精确原因的格子（「地图未解锁 + 需拥有骑拉帝纳」）
+ * 一行塞不下，会把名称和说明都挤成省略号。让说明独占第二行、可换行右对齐，
+ * 名称完整留在第一行。只作用于带 lockMsg 的格子，其它格子仍是紧凑一行。 */
+.fm-targets label.long-msg { flex-wrap: wrap; row-gap: 1px; }
+.fm-targets label.long-msg small { flex: 0 0 100%; margin-left: 0; text-align: right;
+  white-space: normal; overflow: visible; text-overflow: clip; line-height: 1.35; }
+.fm-targets label.got small { text-decoration: none; }
+.fm-targets label.cur { border-color: var(--gold-border); background: var(--gold-wash-soft); }
+.fm-targets label.cur small { color: var(--gold); font-weight: 700; }
+/* 第五十六批：功能跑起来后整张意向表锁住。
+ *   .lock 没选中的那些 —— 变灰、鼠标禁用；
+ *   .run  选中的那条 —— 保留金色高亮，让人一眼看到这次在刷什么。
+ * 只靠 data-locked="1" 才生效，停止（属性变 0）立刻恢复原样。 */
+.fm-targets[data-locked="1"] label { cursor: not-allowed; }
+.fm-targets[data-locked="1"] label input { cursor: not-allowed; }
+.fm-targets[data-locked="1"] label.lock { opacity: .42; filter: grayscale(1);
+  border-color: var(--line); background: var(--sunken); color: var(--faint); }
+.fm-targets[data-locked="1"] label.lock:hover { border-color: var(--line); }
+.fm-targets[data-locked="1"] label.run { opacity: 1; filter: none;
+  border-color: var(--gold-border); background: var(--gold-wash-soft); color: var(--text); }
+.fm-targets[data-locked="1"] label.run small.own,
+.fm-targets[data-locked="1"] label.run small.eff { color: var(--gold); }
+/* 第五十四批：意向树果按文档那张 6 列 × 5 行表格重排 ——
+ * 每行两组、每组三段「名称 / 效果 / 持有数N」。一格只有 ~176px，硬塞三列
+ * 会把「金色蔓莓果 + 捕捉×1.5 + 持有数25」挤成省略号，所以折成两行：
+ *   第一行  ○ 名称                     持有数 N
+ *   第二行    效果
+ * 顺序与文案一律照文档，不再用旧版「普通树果·有12」那种简写。 */
+#pane-berry .fm-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+#by-targets label { display: grid; grid-template-columns: 14px minmax(0, 1fr) auto;
+  grid-template-rows: auto auto; column-gap: 4px; row-gap: 0;
+  align-items: center; padding: 3px 5px; font-size: 10.5px; }
+#by-targets label .cbx { grid-column: 1; grid-row: 1 / span 2; display: inline-flex;
+  align-items: center; justify-content: center; width: 14px; height: 14px; }
+#by-targets label .cbx input { margin: 0; width: 12px; height: 12px; cursor: pointer; }
+#by-targets label .nm { grid-column: 2; grid-row: 1; white-space: nowrap; overflow: hidden;
+  text-overflow: ellipsis; }
+#by-targets label small { font-size: 9.5px; white-space: nowrap; min-width: 0; }
+#by-targets label .own { grid-column: 3; grid-row: 1; margin-left: 0;
+  color: var(--gold); font-weight: 700; }
+#by-targets label .eff { grid-column: 2 / span 2; grid-row: 2; margin-left: 0;
+  color: var(--faint); overflow: hidden; text-overflow: ellipsis; }
+#by-targets label.cur small.own { color: var(--gold); font-weight: 700; }
+#by-targets label.cur small.eff { color: var(--text-soft); }
+/* 「狂爆刷取任意树果」独占最后一行，通栏 + 单行显示 */
+#by-targets label[data-id="any"] { grid-column: 1 / -1; display: flex; gap: 6px;
+  align-items: center; font-size: 11px; }
+#by-targets label[data-id="any"] input { width: 13px; height: 13px; }
+#by-targets label[data-id="any"] .nm { flex: 0 0 auto; }
+#by-targets label[data-id="any"] small.tip { margin-left: auto; font-size: 9.5px;
+  color: var(--faint); overflow: hidden; text-overflow: ellipsis; }
+/* 第五十批：稀有道具多选按「点击先后」排队 —— 序号直接画在勾选框里（1 先刷、2 次之…）。
+ * 自己画方框而不是用原生对勾：原生勾会跟数字打架，而且一格里宽度本来就紧，
+ * 序号塞进方框里不占额外宽度（名字 / 概率那串一点没被挤）。树果是单选，不套这一层。 */
+#it-targets label .cbx { position: relative; flex: 0 0 auto; display: inline-flex;
+  width: 14px; height: 14px; }
+#it-targets label .cbx input { -webkit-appearance: none; appearance: none; margin: 0;
+  width: 14px; height: 14px; border: 1px solid var(--line); border-radius: 4px;
+  background: var(--sunken); cursor: pointer; }
+#it-targets label .cbx input:checked { border-color: var(--gold-border); background: var(--gold-wash); }
+/* 第五十三批：徽标改成金底白字，比原来的细金线数字醒目；
+ * 真正兜底的是 fmOrderEnsure() 写进元素的内联样式（样式表旧了也照样显示）。 */
+#it-targets label .cbx b.ord { position: absolute; inset: 0; display: none;
+  align-items: center; justify-content: center; font-size: 10px; font-weight: 800;
+  line-height: 1; color: #fff; background: var(--gold); border-radius: 3px;
+  z-index: 3; pointer-events: none; }
+#it-targets label .cbx b.ord:not(:empty) { display: flex; }
+/* 清单上方的纯文字顺序行：CSS 只是兜底，JS 同样会把样式内联写一遍 */
+.fm-order { margin: 0 0 6px; padding: 5px 8px; border-radius: 7px;
+  background: var(--gold-wash-soft); color: var(--text); font-size: 11px;
+  line-height: 1.5; word-break: break-all; }
+.fm-order[hidden] { display: none; }
+#it-targets label.dim .cbx input { cursor: default; }
+/* v1.27：道具格改成两行——第一行是勾选框 + 完整道具名（不再被挤成省略号），
+ * 第二行是功能描述 / 概率 / 状态，可整行换行显示。v1.26 给每个道具加了功能描述，
+ * 单行里说明和名字抢宽度，长说明（如「骑拉帝纳起源形态」）会把名字压成「白…」。
+ * 让 small 独占第二行、名称独占第一行，文字再长名字也完整可见、内容也全显示。 */
+#it-targets label { flex-wrap: wrap; row-gap: 1px; align-content: center; }
+#it-targets label > span.nm { flex: 1 1 auto; min-width: 0; white-space: nowrap;
+  overflow: visible; text-overflow: clip; }
+#it-targets label > small { flex: 0 0 100%; margin-left: 0; text-align: left;
+  white-space: normal; overflow: visible; text-overflow: clip; line-height: 1.35; }
+.fm-ranks { list-style: none; margin: 0; padding: 0; max-height: 168px; overflow: auto; }
+.fm-ranks li { display: flex; align-items: center; gap: 6px; padding: 4px 6px;
+  border-bottom: 1px solid var(--row-line); font-size: 11px; color: var(--text-soft); }
+.fm-ranks li.locked { opacity: .55; }
+.fm-ranks li.cur { background: var(--gold-wash-soft); }
+/* 第四十一批：轮换用的前两名标 ①②，名字加粗一点，一眼能看出插件只用这两张 */
+.fm-ranks li.pick { background: var(--gold-wash-soft); }
+.fm-ranks li.pick .nm { color: var(--text); font-weight: 700; }
+.fm-ranks .nm { flex: 1 1 auto; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.fm-ranks .pr { flex: 0 0 auto; color: var(--gold); font-weight: 700; }
+.fm-ranks .rs { flex: 0 1 auto; min-width: 0; color: var(--faint); font-size: 10px;
+  overflow: hidden; white-space: nowrap; text-overflow: ellipsis; text-align: right; }
+.fm-opts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px 8px; margin: 6px 0; }
+.fm-opts label { display: flex; align-items: center; gap: 5px; font-size: 11.5px; color: var(--text-soft); }
+/* 第二十七批：「仓库达到 N 个就停」这句连输入框一起放满一行，别挤成两截 */
+.fm-opts label.wide { grid-column: 1 / -1; }
+.fm-opts .unit { flex: none; color: var(--faint); font-size: 10px; margin-left: 2px; }
+.fm-opts select { flex: 1 1 auto; min-width: 0; }
+.fm-tally { display: flex; flex-wrap: wrap; gap: 4px; margin: 7px 0; }
+.fm-tally span { padding: 2px 7px; border: 1px solid var(--line); border-radius: 10px;
+  background: var(--sunken); font-size: 10.5px; color: var(--text-soft); }
+.fm-tally span.gold { border-color: var(--gold-border); background: var(--gold-wash-soft); color: var(--gold); }
+
+/* ---------------- 第六批：图鉴状态卡 ----------------
+ * 「未捕捉」筛选开关第八批起移到「页面自动化」，这里只留状态卡样式。 */
+.dx-env { display: flex; flex-wrap: wrap; gap: 5px; margin: 6px 0 9px; }
+.dx-env span { flex: 1 1 auto; padding: 4px 7px; border: 1px solid var(--line);
+  border-radius: 7px; background: var(--sunken); font-size: 10.5px; color: var(--faint); }
+.dx-env b { color: var(--text-soft); font-variant-numeric: tabular-nums; }
+.dx-sec { display: flex; align-items: baseline; justify-content: space-between; gap: 8px;
+  margin: 10px 0 5px; padding-bottom: 4px; border-bottom: 1px solid var(--hairline); }
+.dx-sec b { font-size: 12px; color: var(--text); }
+.dx-sec span { font-size: 10px; color: var(--faint); }
+.dx-gaps { list-style: none; margin: 0; padding: 0; display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px; }
+.dx-gaps li { padding: 5px 7px; border: 1px solid var(--line); border-radius: 7px;
+  background: var(--sunken); }
+.dx-gaps .gp-hd { display: flex; justify-content: space-between; gap: 5px;
+  font-size: 10.5px; color: var(--text-soft); }
+.dx-gaps .gp-hd b { color: var(--warn); font-variant-numeric: tabular-nums; }
+.dx-gaps .gp-bar { height: 4px; margin-top: 5px; border-radius: 3px;
+  background: var(--line); overflow: hidden; }
+.dx-gaps .gp-bar i { display: block; height: 100%; background: var(--gold); }
+.dx-gaps li.full .gp-hd b { color: var(--green); }
+.dx-gaps li.empty { grid-column: 1 / -1; border: 0; background: none; color: var(--faint); }
+/* 第九十九批：分类格子改成「6 列等分的一排」——
+ * 以前是 flex 换行，6 个分类（含最后的「特殊获取」）在窄面板里放不下，
+ * 第 6 个会单独换到下一行并被撑成一条满宽的长条，跟上面 5 个完全不像一套东西。
+ * 用 grid 等分后每个格子一样宽、一样高，特殊获取就是第 6 格。 */
+.dx-totals { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 5px; margin: 5px 0 7px; align-items: stretch; }
+.dx-totals span { padding: 2px 7px; border: 1px solid var(--line); border-radius: 10px;
+  background: var(--sunken); font-size: 10.5px; color: var(--text-soft); }
+.dx-totals span.gold { border-color: var(--gold-border); background: var(--gold-wash-soft); color: var(--gold); }
+.dx-totals span.warn { border-color: var(--warn); color: var(--warn); }
+/* 第六十九批：图鉴捕捉里的「洛托姆 5 形态」清单
+ * 第七十七批：整份清单换成跟未捕捉清单同一套 .dx-card 卡片（勾选框挪到卡片头部），
+ * 所以这里只留「它不是滚动小窗」和三条状态色，其余全用 .dx-card / .dx-head /
+ * .dx-where / .dx-why 的原样式，别再单独画一套。 */
+.dx-rotom { margin: 6px 0 2px; }
+.dx-rotom-list { list-style: none; margin: 0; padding: 0;
+  display: flex; flex-direction: column; gap: 4px; }
+.dx-rotom-list.dex-plan.dx-list { max-height: none; overflow: visible; }
+.dx-rotom-list li.dx-card { margin-bottom: 0; }
+.dx-rotom-list li.dx-card .dx-head { align-items: flex-start; }
+.dx-rotom-list li.dx-card .dx-head input[type="checkbox"] {
+  flex: none; margin: 2px 6px 0 0; }
+.dx-rotom-list li.dx-card .dx-name { flex: 1; min-width: 0; }
+.dx-rotom-list li.dx-card .dx-badge { margin-top: 1px; }
+.dx-rotom-list li.dx-card.rt-owned { background: var(--gold-wash-soft);
+  border-left-color: var(--gold) !important; }
+.dx-rotom-list li.dx-card.rt-on { background: var(--sunken); }
+/* 第八十二批：条件不满足被自动关掉勾选的那几只 —— 虚线边 + 压淡，一眼看出「没在刷」 */
+.dx-rotom-list li.dx-card.rt-park { border-left-style: dashed; opacity: .72; }
+/* 第八十三批：没拿到普通洛托姆之前，5 种形态整块压灰（勾选框不可点） */
+.dx-rotom-list li.dx-card.rt-lock { opacity: .55; }
+.dx-rotom-list li.dx-card.rt-lock .dx-name { color: var(--faint); }
+.dx-rotom-list li.dx-card.rt-lock .dx-badge.dx-badge-lock {
+  border-color: var(--line-strong); color: var(--faint); background: var(--sunken); }
+.dx-rotom-list li.dx-card .dx-head input[type="checkbox"]:disabled { cursor: default; }
+/* 第一百二十批：特殊相遇已用过 / 图鉴已收录 → 整块压灰、勾选框不可点 */
+.dx-rotom-list li.dx-card.rt-done { opacity: .55; }
+.dx-rotom-list li.dx-card.rt-done .dx-name { color: var(--faint); }
+.dx-rotom-list li.dx-card.rt-done .rt-caught { color: var(--faint);
+  background: var(--sunken); border-color: var(--line-strong); box-shadow: none; }
+.dx-badge.dx-badge-done { border-color: var(--line-strong); color: var(--faint);
+  background: var(--sunken); }
+/* 第一百二十一批：洛托姆点击顺序序号 —— 显示在「勾选框里」。
+ * input 透明盖在自绘方框上，保留原生 checked/disabled 语义与事件委托；
+ * 未勾时是空方框，勾选后框内显示点击顺序数字（1/2/3…）。 */
+.dx-rotom-list li.dx-card .dx-head .rt-chk {
+  position: relative; display: inline-block; flex: none;
+  width: 17px; height: 17px; margin: 1px 6px 0 0; }
+.dx-rotom-list li.dx-card .dx-head .rt-chk input[type="checkbox"] {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  margin: 0; opacity: 0; cursor: pointer; z-index: 2; }
+.dx-rotom-list li.dx-card .dx-head .rt-chk input[type="checkbox"]:disabled { cursor: default; }
+.dx-rotom-list li.dx-card .dx-head .rt-chk .rt-chk-box {
+  position: absolute; inset: 0; box-sizing: border-box;
+  border: 1.5px solid var(--line-strong); border-radius: 4px;
+  background: var(--sunken);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 800; line-height: 1;
+  color: var(--text); font-variant-numeric: tabular-nums; }
+.dx-rotom-list li.dx-card .dx-head .rt-chk input[type="checkbox"]:checked + .rt-chk-box {
+  border-color: var(--gold); background: var(--gold-wash-soft); color: var(--gold); }
+/* 有序号：勾选后框内显示点击顺序号（data-seq 在 .rt-chk-box 上） */
+.dx-rotom-list li.dx-card .dx-head .rt-chk .rt-chk-box.has-seq { color: var(--faint); }
+.dx-rotom-list li.dx-card .dx-head .rt-chk input[type="checkbox"]:checked + .rt-chk-box.has-seq::after {
+  content: attr(data-seq); color: var(--gold); }
+/* 无序号但被勾上（兜底）：显示 ✓ */
+.dx-rotom-list li.dx-card .dx-head .rt-chk input[type="checkbox"]:checked + .rt-chk-box:not(.has-seq)::after {
+  content: "\2713"; }
+/* 已收录 / 锁定项：勾选框压灰 */
+.dx-rotom-list li.dx-card.rt-done .rt-chk .rt-chk-box,
+.dx-rotom-list li.dx-card.rt-lock .rt-chk .rt-chk-box {
+  opacity: .7; border-color: var(--line-strong); background: var(--sunken); }
+/* 旧 .rt-seq 已废弃（序号改在勾选框内），保留以免历史 DOM 残片裸奔 */
+.rt-seq { display: none; }
+.dx-rotom-list li.dx-card.st-done { opacity: 1; }
+.dx-rotom-list li.empty { border: 0; background: none; color: var(--faint); padding: 2px; }
+
+.dex-plan.dx-list { max-height: 300px; }
+.dex-plan.dx-list li.dx-card { display: block; padding: 6px 8px; margin-bottom: 5px;
+  border: 1px solid var(--line); border-left: 3px solid var(--line-strong);
+  border-radius: 7px; background: var(--sunken); }
+.dex-plan.dx-list li.dx-card.st-ready-cond { border-left-color: var(--gold); background: var(--gold-wash-soft); }
+.dex-plan.dx-list li.dx-card.st-ready { border-left-color: var(--green); }
+.dex-plan.dx-list li.dx-card.st-weather,
+.dex-plan.dx-list li.dx-card.st-time { border-left-color: var(--warn); }
+.dex-plan.dx-list li.dx-card.st-locked,
+.dex-plan.dx-list li.dx-card.st-evo,
+.dex-plan.dx-list li.dx-card.st-special { border-left-color: var(--line-strong); opacity: .82; }
+.dx-head { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; }
+.dx-name { font-size: 11.5px; font-weight: 700; color: var(--text); }
+.dx-name small { font-weight: 400; color: var(--faint); font-size: 10px; }
+.dx-badge { flex: none; padding: 1px 6px; border-radius: 9px; font-size: 9.5px;
+  border: 1px solid var(--line); color: var(--muted); background: var(--sunken); }
+.st-ready-cond .dx-badge { border-color: var(--gold-border); color: var(--gold); background: var(--gold-wash-soft); }
+.st-ready .dx-badge { border-color: var(--green-soft); color: var(--green); }
+.st-weather .dx-badge, .st-time .dx-badge { border-color: var(--warn); color: var(--warn); }
+.dx-where { margin-top: 3px; font-size: 10.5px; color: var(--muted); }
+.dx-where b { color: var(--gold); font-variant-numeric: tabular-nums; }
+/* 第一百一十五批：洛托姆卡的「图鉴已收录（仍可刷）」靠右 + 更显眼。
+ * 路径文字与徽标拆成两块，用 flex 把徽标推到最右；金色描边药丸比原来
+ * 混在路径里的一串灰字醒目得多，也不挤占路径的换行。 */
+.dx-rotom-list .dx-where { display: flex; align-items: flex-start; gap: 6px; }
+.dx-rotom-list .dx-where-txt { flex: 1 1 auto; min-width: 0; }
+.rt-caught {
+  flex: 0 0 auto; align-self: flex-start; white-space: nowrap;
+  font-size: 10px; font-weight: 800; letter-spacing: .2px;
+  color: var(--gold); background: var(--gold-wash-soft);
+  border: 1px solid var(--gold-border); border-radius: 9px; padding: 1px 7px;
+  box-shadow: 0 0 8px var(--gold-wash-soft);
+}
+/* 第七十七批：明细区改成「左侧竖线 + 条目之间细横线」的引文块样式 ——
+ * 卡面（名字 / 徽标 / 路径行）负责摘要，这一块负责逐条摆事实，一条一行看得清。
+ * 洛托姆清单与未捕捉清单共用同一套，两边长得一模一样。 */
+.dx-why { list-style: none; margin: 5px 0 0; padding: 0 0 0 7px;
+  border-left: 2px solid var(--line); }
+.dx-why li { font-size: 10px; line-height: 1.45; color: var(--faint); padding: 2.5px 0; }
+.dx-why li + li { border-top: 1px solid var(--hairline); }
+.dx-why li::before { content: '· '; color: var(--gold); }
+.dx-why li.hi { color: var(--warn); }
+
+/* ---------------- 第六批：培育屋金色艺术字 / 经验进度 / 直白概率 ---------------- */
+.brief.ns-brief-gold { font-weight: 800; letter-spacing: .5px;
+  color: var(--gold); border-radius: 8px;
+  background: linear-gradient(100deg, transparent, var(--gold-wash-soft) 50%, transparent);
+  text-shadow: 0 1px 0 var(--bg), 0 0 7px var(--gold-border), 0 0 14px var(--gold); }
+[data-scheme="dark"] .brief.ns-brief-gold {
+  text-shadow: 0 0 8px var(--gold), 0 0 16px var(--gold-border); }
+.ns-grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.ns-list li .ns-lv { flex: none; font-size: 10px; color: var(--text-soft);
+  font-variant-numeric: tabular-nums; }
+.ns-list li .ns-xp { flex: none; width: 54px; height: 4px; border-radius: 3px;
+  background: var(--line); overflow: hidden; }
+.ns-list li .ns-xp i { display: block; height: 100%; background: var(--gold); }
+.ns-list li .ns-xp-t { flex: none; width: 38px; text-align: right;
+  font-size: 10px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.ns-odds { margin: 6px 0; padding: 7px 8px; border: 1px solid var(--gold-border);
+  border-radius: 8px; background: var(--gold-wash-soft); }
+.ns-odds .od-lead { font-size: 11.5px; line-height: 1.5; color: var(--text); }
+.ns-odds .od-lead b { color: var(--gold); font-size: 14px; }
+.ns-odds .od-row { display: flex; justify-content: space-between; gap: 6px;
+  margin-top: 4px; padding-top: 4px; border-top: 1px solid var(--hairline);
+  font-size: 10.5px; color: var(--muted); }
+.ns-odds .od-row b { color: var(--text-soft); font-variant-numeric: tabular-nums; }
+.ns-odds .od-row.hit b { color: var(--gold); }
+.ns-odds .od-foot { margin-top: 5px; font-size: 10px; color: var(--faint); }
+
+/* ---------------- 第七批：可点击分类 / 游戏原生图标与配色 ---------------- */
+.dx-cat-tip { margin: 0 0 7px; font-size: 10px; line-height: 1.4; color: var(--faint); }
+.dx-totals { gap: 5px; }
+button.dx-cat { display: flex; align-items: center; justify-content: center; gap: 3px;
+  min-height: 52px; padding: 6px 3px; border: 1px solid var(--line); border-radius: 11px;
+  background: var(--sunken); color: var(--text-soft);
+  font: inherit; font-size: 10px; line-height: 1.25; text-align: center;
+  word-break: break-all; overflow-wrap: anywhere; cursor: pointer;
+  transition: border-color .12s, background .12s, color .12s; }
+button.dx-cat:hover { border-color: var(--dxc); color: var(--dxc); }
+button.dx-cat img { width: 13px; height: 13px; object-fit: contain; flex: none;
+  image-rendering: pixelated; }
+button.dx-cat b { color: inherit; font-variant-numeric: tabular-nums; font-weight: 800; }
+button.dx-cat.on { border-color: var(--dxc); color: var(--dxc);
+  background: var(--gold-wash-soft); box-shadow: 0 0 0 1px var(--dxc) inset; }
+[data-scheme="dark"] button.dx-cat.on { background: rgba(255, 216, 74, .12); }
+.dex-plan.dx-list li.dx-card { border-left-color: var(--dxc, var(--line-strong)) !important; }
+.dex-plan.dx-list li.dx-card .dx-badge { color: var(--dxc, var(--muted)) !important;
+  border-color: var(--dxc, var(--line)) !important; }
+.dx-badge { display: inline-flex; align-items: center; gap: 3px; }
+img.dx-ico { width: 12px; height: 12px; object-fit: contain; flex: none;
+  image-rendering: pixelated; }
+.dx-wx { margin-right: 4px; letter-spacing: 1px; }
+/* 所有功能面板标题统一用游戏 assets/ 里的小图标；闪光标记也用游戏 sparkle.svg */
+img.pane-ico { width: 14px; height: 14px; object-fit: contain; flex: none;
+  image-rendering: pixelated; opacity: .92; }
+/* 路闪监测的闪光精灵球是矢量 SVG，别用 pixelated 把边缘锯齿化 */
+img.pane-ico.pane-ico-svg { image-rendering: auto; opacity: 1; }
+/* 第六十五批：两枚标题图标改成文字符号（联盟刷钱 ₽ / 定点循环 🔁），
+   占和 img.pane-ico 一样大的 14px 格子，跟标题基线对齐 */
+span.pane-glyph { width: 14px; height: 14px; flex: none;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 12px; line-height: 1; font-weight: 700;
+  color: var(--gold-soft); }
+span.pane-glyph:first-letter { letter-spacing: 0; }
+img.ns-sh-ico { width: 11px; height: 11px; object-fit: contain; flex: none;
+  vertical-align: -1px; margin-left: 3px; image-rendering: pixelated; }
+
+/* 第一百一十一批：清单里的宝可梦小立绘。18px 内联、垂直居中，
+   不改行高、不撑高卡片；透明 PNG 用 contain，免得不同编号尺寸不一被拉伸。 */
+img.mon-art {
+  width: 18px; height: 18px; flex: none;
+  object-fit: contain; vertical-align: -4px;
+  margin-right: 3px; opacity: .95;
+}
+img.mon-art.mon-art-s {
+  width: 15px; height: 15px; vertical-align: -3px; margin-right: 2px;
+}
+/* 名字区是 flex 且带省略号，图标固定不参与收缩 */
+.ns-list li .nm img.mon-art,
+.dx-card .dx-name img.mon-art,
+.leg-list .leg-name img.mon-art,
+.leg-cur-nm img.mon-art { flex: none; }
+
+/* 第五十八批：定点循环面板 —— 地区 / 章节 / 步骤三个下拉挤在窄弹窗里，
+   统一折行排，章节名长的时候让它自己换到下一行，别把「取当前」挤出去 */
+.orb-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 2px 0 8px;
+}
+
+.orb-row label {
+  flex: none;
+  color: var(--text);
+}
+
+.orb-row select {
+  flex: 1 1 96px;
+  min-width: 0;
+  max-width: none;
+  padding: 4px 6px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--text);
+  font: inherit;
+}
+
+.orb-row #orb-mode { flex: 1 1 100%; }
+
+/* 第五十八批：.orb-row 写了 display:flex，比浏览器默认的 [hidden]{display:none}
+ * 更具体，所以「定点」行和「形态」行靠 hidden 属性根本藏不住 —— 不补这条，
+ * 非定点模式下这两个选择行会一直挂在卡片里。 */
+.orb-row[hidden] { display: none; }
+
+.orb-row #point-region {
+  flex: 0 0 72px;
+}
+
+/* 「取当前」带着 .ug-btn，那套样式是给整行按钮用的 width:100%，
+ * 摆在行内会被撑满、把自己挤到下一行，这里改回内容宽度。 */
+.orb-row #point-take {
+  flex: none;
+  width: auto;
+  margin: 0 0 0 auto;
+  padding: 4px 8px;
+}
+
+/* ==================================================================
+ * 第八十九批：手机浏览器（Kiwi / Edge Canary 等安卓 Chromium 内核）适配
+ *
+ * 三件事：
+ *   1) 触摸屏上一切点击区都要够大（安卓建议 ≥ 40px 高、44px 宽），
+ *      指针变粗时统一放大开关、图标键、折叠标题、输入框；
+ *   2) 三列网格在 360dp 的屏上挤成一团，降到两列；
+ *   3) 全屏模式（popup.html?tab=1，body.mode-tab）：手机上边玩游戏边调设置，
+ *      宽度按屏幕走、居中、不限高、标题栏吸顶，正文不再被 popup 的 620px 卡住。
+ * 只加规则、不动原有桌面样式，桌面上这些 media 一条都不会命中。
+ * ================================================================== */
+
+/* ---- ① 触摸屏：尺寸与排布 ---- */
+@media (pointer: coarse) {
+  body {
+    font-size: 14px;
+    line-height: 1.5;
+    /* 惯性滚动跟手，滚到边界别把整个弹窗一起拖走 */
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+
+  /* 开关：整行都是热区，高度撑到 44px 以上 */
+  .sw { padding: 11px 0; gap: 11px; }
+  .sw .track { width: 42px; height: 24px; }
+  .sw .track::after { width: 20px; height: 20px; }
+  .sw input:checked + .track::after { transform: translateX(18px); }
+  .sw .txt em { font-size: 13.5px; }
+  .sw .txt small { font-size: 12px; line-height: 1.45; }
+  .sw.star { padding: 12px 8px; }
+
+  /* 标题栏图标键：24px 在手指下太难点 */
+  .icon-btn { width: 34px; height: 34px; border-radius: 9px; }
+  .icon-btn .ico { width: 18px; height: 18px; }
+  .theme-btn { width: 34px; height: 34px; font-size: 15px; }
+
+  /* 折叠标题（每张卡的标题行） */
+  details > summary { padding: 11px 2px; font-size: 14px; }
+  details > summary::before { width: 20px; }
+
+  /* 普通按钮 / 输入框 */
+  button { min-height: 36px; }
+  button.tiny { min-height: 30px; padding: 5px 9px; }
+  input[type="text"], input[type="number"], select { min-height: 32px; font-size: 13px; }
+  input[type="checkbox"], input[type="radio"] { transform: scale(1.25); margin: 4px; }
+
+  /* 三列网格 → 两列（360dp 上三列每列只剩 100px，字全被挤断） */
+  .ns-grid, .mk-grid, .sg-grid, .fm-grid, .ns-grid-3,
+  .status-card {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  #pane-berry .fm-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .mk-add { grid-template-columns: minmax(0, 1fr) 68px 50px; }
+  .mk-opts, .fm-opts, .farm-stat, .ns-stats { grid-template-columns: 1fr; }
+
+  /* 列表行（日志 / 黑市命中 / 培育屋）行高放宽，方便点 */
+  #log li { padding: 5px 0; }
+  .ns-list li, .mk-events li, .mk-hits li { padding: 6px 0; }
+
+  /* 卡片里的状态条也放大一档，缩着看不清 */
+  .dx-card .dx-name, .dx-card .dx-where { font-size: 12.5px; }
+}
+
+/* ---- ② 全屏模式（标签页里打开） ---- */
+body.mode-tab {
+  width: auto;
+  max-width: 680px;
+  max-height: none;
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 12px 14px 28px;
+  /* 安卓浏览器底部地址栏会遮挡：留出安全区 */
+  padding-bottom: calc(28px + env(safe-area-inset-bottom, 0px));
+}
+
+/* 全屏模式下标题栏吸顶：往下翻到「图鉴捕捉」时也能一眼看到连接状态、点刷新 */
+body.mode-tab .top {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  margin: -12px -14px 10px;
+  padding: 10px 14px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+}
+
+/* 全屏模式里把「全屏」键自己藏掉（已经在全屏了） */
+body.mode-tab #expand { display: none; }
+
+/* 桌面浏览器上全屏模式：加一条竖线边框，别把内容摊成 1200px 长条 */
+@media (min-width: 720px) {
+  body.mode-tab {
+    margin: 16px auto;
+    min-height: calc(100vh - 32px);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, .28);
+    max-height: none;
+    overflow: visible;
+  }
+  body.mode-tab .top { margin: -12px -14px 10px; }
+}
+
+/* ---- ③ 手机全屏模式下的文字提示（弹窗里那条 hint 太长） ---- */
+body.mode-tab .hint { font-size: 12.5px; }
+
+/* ===== 第一百一十批：路闪监测（本次 / 历史两栏 + 游戏闪光立绘） ===== */
+.rs-sum {
+  margin: 10px 0 6px; padding: 7px 9px; font-size: 12px; font-weight: 700;
+  color: var(--text-soft); background: var(--sunken);
+  border: 1px solid var(--line); border-radius: 8px;
+}
+.rs-tools { display: flex; align-items: center; gap: 8px; margin: 8px 0 4px; flex-wrap: wrap; }
+.rs-note { font-size: 11px; color: var(--faint); }
+.rs-h {
+  margin: 12px 0 5px; font-size: 12px; font-weight: 700;
+  color: var(--gold-soft); letter-spacing: .3px;
+}
+.rs-list {
+  list-style: none; margin: 0; padding: 0;
+  max-height: 220px; overflow-y: auto;
+  border: 1px solid var(--line); border-radius: 8px;
+}
+.rs-list .empty { padding: 12px; text-align: center; font-size: 12px; color: var(--faint); }
+.rs-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px; border-bottom: 1px solid var(--row-line);
+}
+.rs-row:last-child { border-bottom: 0; }
+.rs-row.rs-got { background: var(--gold-wash-soft); }
+.rs-art {
+  width: 52px; height: 52px; flex: 0 0 52px; object-fit: contain;
+  background: var(--sunken); border-radius: 8px;
+}
+.rs-art-none {
+  display: flex; align-items: center; justify-content: center;
+  width: 52px; height: 52px; flex: 0 0 52px;
+  color: var(--faint); font-size: 20px; background: var(--sunken); border-radius: 8px;
+}
+.rs-main { min-width: 0; flex: 1; }
+.rs-line1 { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.rs-line1 b { font-size: 13px; color: var(--text); }
+.rs-line1 small { font-size: 11px; color: var(--faint); }
+.rs-tag {
+  font-size: 10px; line-height: 1.5; padding: 0 6px; border-radius: 10px;
+  border: 1px solid var(--line); background: var(--card2); color: var(--muted);
+}
+.rs-tag.ok {
+  color: var(--green); border-color: var(--run-on-line); background: var(--run-on-wash);
+}
+.rs-line2 { font-size: 11px; color: var(--muted); margin-top: 3px; }
+.rs-line3 {
+  font-size: 11px; color: var(--text-soft); margin-top: 3px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* 第一百一十九批：配置备份卡片的状态行 */
+#cfg-note{margin:6px 0 0;font-size:11px;color:var(--muted,#9aa3bb)}
+#cfg-note[data-tone="ok"]{color:#4ec98a}
+#cfg-note[data-tone="warn"]{color:#e0a44a}
+
+
+/* ===== 地下预测：晶洞序列 + 探险结果预览 ===== */
+.uf-controls { display:flex; flex-wrap:wrap; gap:10px; margin:8px 0; }
+.uf-controls label { display:flex; align-items:center; gap:7px; color:var(--muted); font-size:11px; }
+.uf-controls select { min-width:90px; max-width:100%; padding:5px 7px; color:var(--text); background:var(--sunken); border:1px solid var(--line); border-radius:6px; }
+/* v1.40：晶洞档位自定义下拉（每项带游戏原生晶洞图标） */
+.uf-controls select.gf-tier-native { display:none; }
+.gf-dd { position:relative; display:inline-block; }
+.gf-dd-btn { display:inline-flex; align-items:center; gap:6px; min-width:104px; padding:4px 8px;
+  color:var(--text); background:var(--sunken); border:1px solid var(--line); border-radius:6px;
+  font-size:11px; cursor:pointer; line-height:1.2; }
+.gf-dd-btn .gf-ico,.gf-dd-item .gf-ico { width:18px; height:18px; object-fit:contain; flex:none; image-rendering:auto; }
+.gf-dd-caret { margin-left:auto; width:0; height:0; border-left:4px solid transparent; border-right:4px solid transparent;
+  border-top:5px solid var(--muted); flex:none; }
+.gf-dd-menu { position:absolute; z-index:60; left:0; top:calc(100% + 3px); min-width:132px; padding:4px;
+  /* v1.42：原来误用未定义的 --panel 导致浅色主题下回退成深色 #1c2030，深色字落在深底看不清。
+     改用主题感知的 --card（浅色 #f7f9fc / 深色 #1b1f2b），文字 var(--text) 对比度正常。 */
+  background:var(--card,#1b1f2b); border:1px solid var(--line); border-radius:8px;
+  box-shadow:0 6px 18px rgba(0,0,0,.18); }
+.gf-dd-menu[hidden] { display:none; }
+.gf-dd-item { display:flex; align-items:center; gap:8px; padding:6px 8px; border-radius:6px;
+  font-size:12px; color:var(--text); cursor:pointer; white-space:nowrap; }
+.gf-dd-item:hover { background:var(--sunken); }
+.gf-dd-item.sel { color:var(--gold); background:var(--gold-wash); }
+/* v1.30：闪光化石召回改为勾选框——对所有槽位生效 */
+#uf-recall-note { margin:2px 0 6px; font-size:11px; line-height:1.5; color:var(--muted); }
+#uf-recall-note[data-tone="ok"] { color:#4ec98a; }
+#uf-recall-note[data-tone="warn"] { color:#e0a44a; }
+/* v1.31：闪光化石召回目标清单——每条一行，紧凑换行 */
+.uf-recall-list { list-style:none; margin:0 0 6px; padding:0; }
+.uf-recall-list li { margin:2px 0; padding:5px 8px; font-size:11px; line-height:1.5; color:var(--text);
+  background:var(--sunken); border:1px solid var(--line); border-radius:6px; }
+.uf-recall-list li:before { content:"✦ "; color:#e0a44a; }
+.uf-controls label.uf-recall-ck { display:inline-flex; align-items:center; gap:6px; cursor:pointer; user-select:none; }
+.uf-recall-ck input[type="checkbox"] { width:15px; height:15px; margin:0; accent-color:#4ec98a; cursor:pointer; flex:none; }
+.uf-recall-ck span { color:var(--text); }
+.uf-geodes,.uf-runs { list-style:none; padding:0; margin:8px 0; }
+.uf-geodes { max-height:300px; overflow-y:auto; border:1px solid var(--line); border-radius:8px; }
+.uf-geodes .empty,.uf-runs>.empty { padding:14px 9px; font-size:12px; text-align:center; color:var(--muted); }
+.uf-geode-row { display:flex; align-items:center; gap:8px; padding:8px; border-bottom:1px solid var(--row-line); font-size:11px; }
+.uf-geode-row:last-child { border-bottom:0; }
+.uf-hit { background:var(--gold-wash); }
+.uf-hit .uf-main b { color:var(--gold); }
+.uf-order { flex:0 0 48px; color:var(--text-soft); font-variant-numeric:tabular-nums; }
+.uf-order small,.uf-main small { display:block; font-size:10px; color:var(--muted); margin-top:3px; }
+.uf-main { min-width:0; flex:1; overflow-wrap:anywhere; }
+.uf-main b { font-size:12px; }
+/* v1.40：宝石图标与宝石名同一行对齐 */
+.uf-main .gf-gem-ico { width:18px; height:18px; object-fit:contain; vertical-align:middle;
+  margin-right:5px; image-rendering:auto; flex:none; }
+.uf-main > .gf-gem-ico + b { display:inline; vertical-align:middle; }
+.uf-badges { display:flex; flex-direction:column; align-items:flex-end; gap:3px; }
+.uf-badge { display:inline-block; font-style:normal; font-size:10px; color:var(--muted); padding:1px 5px; border:1px solid var(--line); border-radius:8px; white-space:nowrap; }
+.uf-owned { color:var(--gold-soft); border-color:var(--gold-border); }
+.uf-unstocked .uf-order { color:var(--muted); }
+.uf-exp { margin:10px 0; padding:10px; border:1px solid var(--line); border-radius:9px; background:var(--sunken); overflow-wrap:anywhere; }
+.uf-exp-head { display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:12px; }
+.uf-stats { margin:9px 0 5px; }
+.uf-stats .ns-cell { background:var(--card); }
+.uf-stats .ns-cell b { font-size:12px; }
+.uf-outcome { color:var(--muted); font-size:10px; margin:5px 0 10px; line-height:1.5; }
+.uf-loot { margin:8px 0; }
+.uf-loot>small { color:var(--gold-soft); font-size:10px; }
+.uf-loot>p { color:var(--text-soft); font-size:11px; line-height:1.65; margin:3px 0; }
+.uf-floors { margin-top:8px; border-top:1px solid var(--line); }
+.uf-floors>summary { padding:9px 0 5px; cursor:pointer; color:var(--gold-soft); font-size:11px; }
+.uf-floor-scroll { max-height:300px; overflow:auto; }
+.uf-floor { padding:8px 0; border-bottom:1px solid var(--line); font-size:11px; }
+.uf-floor-head { display:flex; justify-content:space-between; gap:8px; }
+.uf-floor-head span,.uf-floor>small { font-size:10px; color:var(--muted); }
+.uf-floor>p { margin:4px 0; line-height:1.6; color:var(--text-soft); }
+.uf-finished .uf-floor-head b { color:var(--green); }
+.uf-warning { font-size:11px; color:var(--gold-soft); line-height:1.6; }
+
+/* v1.19.0 fossil settlement / recall controls */
+.uf-fossil{margin:12px 0;padding:12px;border:1px solid var(--line,#dce2ee);border-radius:12px;background:var(--card,#f7f9ff)}
+.uf-fossil-item{line-height:1.65;margin:10px 0;overflow-wrap:anywhere}
+.uf-recall{margin-top:12px;border-top:1px solid var(--line,#dce2ee);padding-top:12px}
+.uf-target-label{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.uf-target{width:82px;min-width:0;padding:7px 9px;border:1px solid var(--line,#dce2ee);border-radius:8px;background:var(--bg,#fff);color:inherit;font:inherit}
+.uf-only{display:flex;align-items:flex-start;gap:7px;margin:10px 0;font-size:12px;line-height:1.6}
+.uf-only input{margin-top:4px;flex:none}
+.uf-feedback{font-size:12px;line-height:1.6;overflow-wrap:anywhere}
+.uf-recall .ug-btns{flex-wrap:wrap;gap:8px}.uf-recall .ug-btn{white-space:normal}
+
+
+
+/* ===== v1.23：闪光蛋预测折叠头 + 合并表的类别小标签 ===== */
+.ns-pred-fold > summary { cursor: pointer; list-style: none; }
+.ns-pred-fold > summary::-webkit-details-marker { display: none; }
+.ns-pred-fold > summary::after {
+  content: '▾'; color: var(--faint); font-size: 10px; margin-left: 4px; flex: none; }
+.ns-pred-fold:not([open]) > summary::after { content: '▸'; }
+.ns-pred-fold > summary { align-items: center; }
+.ns-pred-fold[open] > summary { border-bottom-color: var(--gold-border); }
+.ns-pred .pred-tag {
+  font-style: normal; font-weight: 700; font-size: 9px; line-height: 1;
+  margin-left: 6px; padding: 2px 5px; border-radius: 5px; white-space: nowrap;
+  border: 1px solid var(--gold-border); color: var(--gold); background: var(--gold-wash-soft); }
+.ns-pred .pred-tag-f { color: #d98a2b; border-color: #d98a2b55; }
+.ns-pred .pred-tag-p { color: var(--muted); border-color: var(--line); background: var(--sunken); }
+
+/* ===== v1.26：本次探险结果预览折叠 + 查看掉落筛选合并进逐层奖励 ===== */
+.uf-preview-fold > summary { cursor: pointer; }
+.uf-preview-body { padding-top: 6px; }
+.uf-drop-filter { display: flex; align-items: center; gap: 7px; margin: 2px 0 7px; }
+.uf-drop-filter label { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 11px; }
+.uf-drop-filter select { min-width: 120px; max-width: 100%; padding: 4px 6px; color: var(--text);
+  background: var(--sunken); border: 1px solid var(--line); border-radius: 6px; font-size: 11px; }

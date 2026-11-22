@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+  <!-- 第九十九批：玩家给了游戏的「进化」双箭头图标（黄 + 绿两条缠绕的箭头），照着做一份 -->
+  <g fill="none" stroke-width="2.6" stroke-linecap="round">
+    <path d="M9.4 21.4c0-4.1 5.2-5.2 5.2-9.4s-5.2-5.3-5.2-9.4" stroke="#5cba4a"/>
+    <path d="M14.6 21.4c0-4.1-5.2-5.2-5.2-9.4s5.2-5.3 5.2-9.4" stroke="#f1c443"/>
+  </g>
+  <path d="M6.2 3.4 12 1.2l-.6 6.3z" fill="#5cba4a"/>
+  <path d="M17.8 3.4 12 1.2l.6 6.3z" fill="#f1c443"/>
+</svg>

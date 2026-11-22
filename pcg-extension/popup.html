@@ -1,0 +1,660 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <!-- 第八十九批：手机浏览器（Kiwi / Edge Canary）适配。
+       弹窗只有 380px 宽，触屏上一个手指就点满半屏；写成设备宽度后，
+       弹窗里按 100vw 排，全屏模式（?tab=1）按手机屏幕宽度排。 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Poke'Catch 防掉线助手</title>
+  <link rel="stylesheet" href="popup.css?v=1.32">
+  <!-- 同步加载：在首帧之前就把外观定好，浅色浏览器不会先闪一下深色 -->
+  <script src="theme.js"></script>
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <img class="mark" src="icons/icon48.png" alt="" aria-hidden="true">
+      <div>
+        <b>防掉线助手</b>
+        <small>Poke'Catch <span id="ver"></span></small>
+        <small class="by" title="作者">作者：正是吾王</small>
+      </div>
+    </div>
+    <div class="pills">
+      <!-- 第五十二批：刷新游戏页从底部那一排挪到标题栏，去掉文字、换成传统刷新图标 -->
+      <button id="reload" class="icon-btn" type="button" title="刷新游戏页" aria-label="刷新游戏页">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3.2v5.2h-5.2"/>
+        </svg>
+      </button>
+      <!-- 第八十九批：手机的扩展弹窗又窄、切换标签页还会自动关掉，
+           所以多一颗「全屏」键：同一个界面在标签页里打开，边玩边调。 -->
+      <button id="expand" class="icon-btn" type="button"
+              title="在新标签页打开（手机上更好用）" aria-label="在新标签页打开">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-6.5 6.5"/><path d="M3 21l6.5-6.5"/>
+        </svg>
+      </button>
+      <span class="pill" id="pill">检测中</span>
+      <span class="pill compat" id="compat-pill" hidden>兼容性 —</span>
+      <button id="theme-btn" class="theme-btn" type="button"
+              title="外观：跟随浏览器（点击切换）" aria-label="外观：跟随浏览器（点击切换）">◐</button>
+    </div>
+  </header>
+
+  <p class="hint" id="hint" hidden></p>
+
+  <section class="status-card" id="status-card">
+    <div class="stat" id="stat-conn" data-state="off"><small>连接状态</small><b id="conn">—</b></div>
+    <div class="stat" id="stat-spoof" data-state="off"><small>最小化保活</small><b id="spoof">—</b></div>
+    <div class="stat"><small>最小化累计</small><b id="hid">—</b></div>
+    <div class="stat"><small>WebSocket</small><b id="ws">—</b></div>
+    <div class="stat"><small>重连 / 刷新</small><b id="cnt">—</b></div>
+    <div class="stat"><small>已守护</small><b id="up">—</b></div>
+  </section>
+
+  <div class="compat-detail" id="compat-detail" hidden></div>
+
+  <details class="group" id="grp-core" open>
+    <summary><b>保活与自愈</b><span class="brief" id="brief-core"></span></summary>
+    <div class="toggles">
+      <label class="sw star">
+        <input type="checkbox" data-key="keepVisible">
+        <span class="track"></span>
+        <span class="txt"><em>最小化也保持在线</em><small>接管被浏览器停掉的动画帧、防止后台掉线；不再伪造页面可见状态，切到后台会正常结算离线收益（切回来即到账）</small></span>
+      </label>
+      <label class="sw">
+        <input type="checkbox" data-key="keepAlive">
+        <span class="track"></span>
+        <span class="txt"><em>静音保活</em><small>把标签页保持在「正在播放」，后台不被节流/冻结（第一次要在游戏画面点一下才出声，浏览器不允许没点过就播放）</small></span>
+      </label>
+      <label class="sw">
+        <input type="checkbox" data-key="antiIdle">
+        <span class="track"></span>
+        <span class="txt"><em>反挂机活跃</em><small>1 分钟没操作时，每 20~40 秒模拟一次轻微鼠标移动</small></span>
+      </label>
+      <label class="sw">
+        <input type="checkbox" data-key="autoReconnect">
+        <span class="track"></span>
+        <span class="txt"><em>断线自动重连</em><small>检测到 socket 断开后，催促客户端立即重建连接</small></span>
+      </label>
+      <label class="sw">
+        <input type="checkbox" data-key="autoReload">
+        <span class="track"></span>
+        <span class="txt"><em>长时间断线自动刷新</em><small>断开超过 60 秒才刷新，10 分钟内最多 3 次</small></span>
+      </label>
+      <label class="sw">
+        <input type="checkbox" data-key="autoRetryBoot">
+        <span class="track"></span>
+        <span class="txt"><em>加载失败自动重试</em><small>游戏白屏 / 加载失败时帮你点「重试」</small></span>
+      </label>
+      <label class="sw">
+        <input type="checkbox" data-key="keepSystemAwake">
+        <span class="track"></span>
+        <span class="txt"><em>防止电脑休眠</em><small>游戏页开着时阻止系统睡眠（挂机过夜用）</small></span>
+      </label>
+    </div>
+  </details>
+  <details class="group" id="grp-auto" open>
+    <summary><b>页面自动化</b><span class="brief" id="brief-auto"></span></summary>
+    <div class="toggles">
+      <label class="sw">
+        <input type="checkbox" data-key="autoContinue">
+        <span class="track"></span>
+        <span class="txt"><em>进游戏自动点「继续」</em><small>刷新 / 自动刷新后停在首页时，帮你点掉（不会碰「新游戏」）</small></span>
+      </label>
+      <label class="sw">
+        <input type="checkbox" data-key="autoModal">
+        <span class="track"></span>
+        <span class="txt"><em>沉浸通关模式</em><small><b>游戏版本更新时会自动重启</b>（不受本开关限制）；<b>默认关闭</b>，想用自己去面板打开。打开后游戏里所有会<b>卡住画面的框</b>都自动走完：确认框点「继续 / 确定」；<b>送的那几只二选一 · 三选一</b>自动处理：化石<b>默认选第二块</b>；御三家 / 格斗道场等前四个地区的赠送自动选第一个，<b>合众地区的新宝可梦留给你自己选，插件不操作</b>；拿到<b>新宝可梦</b>点「太棒了！」；演出点「跳过」。<b>放生 / 删档 / 覆盖存档</b>这类破坏性确认框绝对不点，只按 Esc 取消</small></span>
+      </label>
+      <label class="sw">
+        <input type="checkbox" data-key="dmgOn">
+        <span class="track"></span>
+        <span class="txt"><em>伤害统计面板</em><small>「此处出没」方框下面那块：招式伤害 / 总伤害 / 承伤（逐只排名 + 实时 HP 血条）、MVP、占比</small></span>
+      </label>
+      <label class="sw">
+        <input type="checkbox" data-key="battleInfo">
+        <span class="track"></span>
+        <span class="txt"><em>战斗属性提示</em><small>血条后面标出双方属性；队伍头像右上角用绿▲ / 红▼告诉你谁克谁</small></span>
+      </label>
+      <label class="sw star">
+        <input type="checkbox" data-key="resumeOn" checked>
+        <span class="track"></span>
+        <span class="txt"><em>刷新页面后功能继续</em><small>游戏页刷新 / 自动刷新后，原本在跑的图鉴捕捉、刷取、刷钱自动接着跑；关掉后刷新即全部停下（各卡片里原来的同名开关已合并到这里）</small></span>
+      </label>
+      <!-- 第一百一十批：闪光战斗守卫开关已挪到「路闪监测」面板里 -->
+      <label class="sw">
+        <input type="checkbox" data-key="dexFilterOn" checked>
+        <span class="track"></span>
+        <span class="txt"><em>图鉴页「未捕捉」筛选</em><small>在游戏图鉴「异色」旁加一枚「未捕捉」按钮，只叠加隐藏，搜索 / 状态 / 地区等原有筛选照常一起用</small></span>
+      </label>
+      <label class="sw">
+        <input type="checkbox" data-key="dexJumpOn" checked>
+        <span class="track"></span>
+        <span class="txt"><em>图鉴 / 拥有宝可梦「同家族跳转」</em><small>图鉴卡的「进化」那一排、仓库 / 队伍里点开的那张卡的「家族」那一排：点同家族的其它形态，直接关掉现在这张、打开点的那一只（有多只时开等级最高的那只；当前这只点了没反应；指针变手、金色描边）</small></span>
+      </label>
+    </div>
+  </details>
+  <p class="sec-label">日常监测<em>互不冲突，可以一起开</em></p>
+
+  <!-- 第一百一十一批：路闪监测按用户要求排到「培育屋监测」之后，见下方。 -->
+
+  <details class="pane" id="pane-feed">
+    <summary><b>自动喂食</b><span class="brief" id="brief-feed"></span></summary>
+    <div class="pane-body">
+      <p class="pane-hint">效果到期（1 小时）自动补一个，同类效果还在时不会重复喂</p>
+      <!-- 第一百一十九批：按玩家要求删掉「自动喂食总开关」，没有任何总闸。
+           勾了哪个果实就只自动喂哪个，一个都不勾就完全不喂；所有果实默认不勾。 -->
+      <p class="pane-hint">已取消总开关：勾了哪个果实才自动喂哪个，全部默认不勾</p>
+      <!-- 第二十四批：这里原来还有一条「运行状态行」，跟卡片右上角的「运行中 · N 种」重复，已删除 -->
+      <ul id="feed-list" class="feed-list"></ul>
+    </div>
+  </details>
+  <details class="pane" id="pane-nursery">
+    <summary><b>培育屋监测</b><span class="brief" id="brief-nursery"></span></summary>
+    <div class="pane-body">
+      <div class="run" id="ns-phase" data-state="off"><b class="rst">未启动</b><span class="rt">正在检测连接…</span></div>
+
+      <div class="ns-grid ns-grid-3" id="ns-grid">
+        <div class="ns-cell"><small>蛋位</small><b id="ns-eggs-n">—</b></div>
+        <div class="ns-cell"><small>可孵 / 闪光</small><b id="ns-ready">—</b></div>
+        <div class="ns-cell"><small>下一颗闪光</small><b id="ns-soon">—</b></div>
+        <div class="ns-cell"><small>孵蛋 K</small><b id="ns-laid">—</b></div>
+      </div>
+
+      <div class="ns-sec"><b>蛋位</b><span id="ns-egg-meta"></span></div>
+      <ul class="ns-list" id="ns-eggs"><li class="empty">还没读到蛋</li></ul>
+
+      <div class="ns-sec"><b>亲代 · 等级 / 经验进度</b><span id="ns-parent-meta"></span></div>
+      <ul class="ns-list" id="ns-parents"><li class="empty">培育屋里没有宝可梦</li></ul>
+
+      <div class="ns-sec"><b>当前亲代能孵出闪光的概率</b><span id="ns-rate-meta"></span></div>
+      <div class="ns-odds" id="ns-odds"></div>
+      <details class="ns-pred-fold" id="ns-pred-fold" open>
+        <summary class="ns-sec"><b>闪光蛋预测</b><span id="ns-next-meta">按当前产蛋序号推算</span></summary>
+        <div class="ns-odds ns-pred" id="ns-next-shiny">—</div>
+      </details>
+      <div class="ns-stats" id="ns-stats"></div>
+
+      <div class="ns-sec"><b>最近事件</b><span>本次页面会话</span></div>
+      <ul class="ns-list ns-events" id="ns-events"><li class="empty">还没有新事件</li></ul>
+
+      <div class="ns-checks">
+        <label><input id="ns-hud" type="checkbox" checked> 游戏页内悬浮看板（默认只在培育屋页显示）</label>
+        <label><input id="ns-hud-always" type="checkbox"> 看板在任何页面都显示</label>
+        <label class="ns-sep"><input id="ns-auto-hatch" type="checkbox"> 自动收孵好的蛋（只收非闪光蛋）<span class="ns-warn">（默认关 · 和下一项只能开一个）</span></label>
+        <label><input id="ns-auto-hatch-shiny" type="checkbox"> 连闪光蛋一起收<span class="ns-warn">（点它会自动关掉上一项，反之亦然）</span></label>
+        <label><input id="ns-auto-feed-egg" type="checkbox"> 蛋槽没满就自动吃果子催蛋<span class="ns-warn">（默认关 · 文柚果 → 桃桃果 → 橙橙果，够装下就用大果）</span></label>
+        <label><input id="ns-auto-shiny-berry" type="checkbox"> 下一颗是吃果闪光亲代就先喂靛莓果<span class="ns-warn">（独立开关 · 默认关 · 命中时先喂异色果让闪光 ×2，再照常催蛋）</span></label>
+        <label><input id="ns-auto-jump" type="checkbox" checked> 有蛋可取就自动切到培育屋，办完切回冒险页<span class="ns-warn">（关掉就只在你已打开的培育屋页帮点，绝不换页）</span></label>
+      </div>
+
+      <div class="ug-btns">
+        <button id="ns-refresh" class="ghost ug-btn">重新读取</button>
+        <button id="ns-clear" class="ghost ug-btn">清零观测</button>
+      </div>
+      <p class="ug-note" id="ns-note"></p>
+    </div>
+  </details>
+  <!-- 第一百一十批：路闪监测 —— 统计插件开启期间遇到的野外闪光，本地保存，
+       本次开启 / 历史分开；闪光战斗守卫的开关也收进这一栏。
+       第一百一十一批：按用户要求排到「培育屋监测」之后，标题挂专属闪光精灵球图标；
+       状态改成「捕捉成功 / 捕捉失败」，异色团体战 boss 不再计入。 -->
+  <details class="pane" id="pane-roadshiny">
+    <summary><img class="pane-ico pane-ico-svg" src="icons/game/shiny-ball.svg" alt=""><b>路闪监测</b><span class="brief" id="brief-roadshiny">未记录</span></summary>
+    <div class="pane-body">
+      <p class="pane-hint">只记<b>地区章节野怪节点</b>遇到的野生闪光（不含异色团体战 boss / 训练家 / 地下通道），用游戏自己的闪光立绘。每条记现实时间、章节、当时天气、宝可梦和<b>捕捉成功 / 捕捉失败</b>。<b>第一百一十八批</b>：认不出宝可梦身份的记录宁可不记，团体战混入与历史上的「未知宝可梦 #?」脏数据全部清掉，保证每一条都是真实可查的野生闪光。刷新一次游戏页算一轮，上一轮自动归到「历史」。</p>
+      <label class="sw star">
+        <input type="checkbox" data-key="shinyGuardOn" checked>
+        <span class="track"></span>
+        <span class="txt"><em>闪光战斗守卫</em><small>遇到野生闪光时，等战斗、丢球、结算全部结束才允许自动化切图；训练家 / 道馆 / 天王 / 团体战 / 地下通道 一律不管，玩家自己手点的切图永远不拦。关掉仍会记录路闪，只是不再拦切图</small></span>
+      </label>
+      <div class="rs-sum" id="rs-sum">本次 0 只 · 捕捉成功 0 只　|　历史 0 只</div>
+      <p class="rs-h">本次开启游戏</p>
+      <ul id="rs-now-list" class="rs-list"><li class="empty">这一轮还没遇到野外闪光</li></ul>
+      <p class="rs-h">历史记录</p>
+      <ul id="rs-hist-list" class="rs-list"><li class="empty">暂无历史记录</li></ul>
+      <!-- 第一百一十二批：按玩家要求把「清除统计」放到面板最下面，历史记录之后 -->
+      <div class="rs-tools">
+        <button id="rs-clear" class="ghost ug-btn" type="button">清除统计</button>
+        <span class="rs-note" id="rs-note">数据只存在本机浏览器里</span>
+      </div>
+    </div>
+  </details>
+  <details class="pane" id="pane-ug">
+    <summary><b>地下通道</b><span class="brief" id="brief-ug"></span></summary>
+    <div class="pane-body">
+      <p class="pane-hint">自动检查地下通道的探险、领取奖励、把宝可梦派出去。派遣前会按该槽位<b>当前</b>的探险主题重新组队，槽位里之前选好的宝可梦不会直接派出。</p>
+      <!-- 第二十二批：删掉重复的「优先执行…」提示（功能描述里已经写了同样的顺序）。
+           第三十五批：今天次数 / 最近一批那句也并进下面这条状态栏，跟「正在做什么」同一句 -->
+      <div class="run" id="ug-phase" data-state="off"><b class="rst">未启动</b><span class="rt">打开游戏页面后可用</span></div>
+      <ul class="ug-slots" id="ug-slots"><li class="empty">打开一次地下通道页就能读到槽位</li></ul>
+      <div class="ug-btns">
+        <button id="ug-now" class="ghost ug-btn">一键派遣</button>
+        <button id="ug-stop" class="ghost ug-btn ug-stop" disabled>停止自动派遣</button>
+      </div>
+      <div class="ug-row">
+        <label for="ug-from">起点层数</label>
+        <select id="ug-from"><option value="0">跟随游戏</option></select>
+        <em id="ug-from-em">派队前会把起点改到你选的层；没解锁就按已解锁的最高层派</em>
+      </div>
+      <div class="ug-row">
+        <label for="ug-check">派遣奖励检查间隔</label>
+        <input id="ug-check" type="number" min="10" max="600" step="5" inputmode="numeric" placeholder="600">
+        <span class="unit">秒</span>
+      </div>
+      <label class="sw sub">
+        <input type="checkbox" data-key="ugSkipParty">
+        <span class="track"></span>
+        <span class="txt"><em>不派队伍里的宝可梦</em><small>优先用仓库里的，别把主力带走</small></span>
+      </label>
+      <label class="sw sub">
+        <input type="checkbox" data-key="ugAutoClose">
+        <span class="track"></span>
+        <span class="txt"><em>战利品弹窗自动关掉</em><small>探险结束弹出「从地下通道归来」时，自动点「太棒了！」</small></span>
+      </label>
+      <label class="sw sub">
+        <input id="ug-hud" type="checkbox" data-key="ugHud">
+        <span class="track"></span>
+        <span class="txt"><em>游戏页内悬浮看板</em><small>功能启动才出现，停止自动收起；可拖动、可折叠</small></span>
+      </label>
+      <!-- 本次探险结果预览：合并进地下通道栏（只读，简明）；v1.26 可展开收起 -->
+      <details class="ns-pred-fold uf-preview-fold" open>
+        <summary class="ns-sec"><b>本次探险结果预览</b><span class="brief" id="brief-expedition">等待读档</span></summary>
+        <div class="uf-preview-body">
+          <p class="pane-hint">读取本次派遣的<b>逐层掉落</b>与<b>化石闪光结算层</b>，只读预览，不会自动领取奖励。打开游戏页并派遣后自动读取。</p>
+          <p class="np-note" id="uf-status">打开游戏页后自动读取</p>
+          <div class="uf-controls">
+            <label>选择槽位<select id="uf-bay"><option value="all">全部槽位</option></select></label>
+            <label class="uf-recall-ck" title="独立常驻开关，对所有槽位生效；勾选后凡检测到闪光化石结算层的槽位都会在到达该层且结算为闪光时自动召回，不依赖地下通道自动派遣功能"><input id="uf-recall" type="checkbox"><span>闪光化石召回</span></label>
+          </div>
+          <p class="np-note" id="uf-recall-note">当前没有检测到可召回的闪光化石结算层（化石按 1/2048 逐层判定，命中时会自动召回）</p>
+          <ul class="uf-recall-list" id="uf-recall-list"></ul>
+          <ul class="uf-runs" id="uf-runs"><li class="empty">还没读到存档</li></ul>
+          <div class="ug-btns"><button id="uf-refresh" class="ghost ug-btn" type="button">重新读取</button></div>
+        </div>
+      </details>
+    </div>
+  </details>
+  <details class="pane" id="pane-geodes">
+    <summary><b>晶洞序列预测</b><span class="brief" id="brief-geodes">等待读档</span></summary>
+    <div class="pane-body">
+      <p class="pane-hint">按训练师标识与各档开启序号，算出接下来每一颗晶洞的<b>升档</b>和<b>宝石</b>。只读预测，不会自动开启晶洞。</p>
+      <p class="np-note" id="gf-status">打开游戏页后自动读取</p>
+      <div class="uf-controls">
+        <label>晶洞档位
+          <span class="gf-dd" id="gf-tier-dd">
+            <button type="button" class="gf-dd-btn" id="gf-tier-btn" aria-haspopup="listbox" aria-expanded="false"></button>
+            <span class="gf-dd-menu" id="gf-tier-menu" role="listbox" hidden></span>
+          </span>
+          <select id="gf-tier" class="gf-tier-native" aria-hidden="true" tabindex="-1"><option value="0">普通</option><option value="1">较少见</option><option value="2">稀有</option><option value="3">传说</option></select>
+        </label>
+        <label>预测范围<select id="gf-count"><option value="12">未来 12 次</option><option value="24" selected>未来 24 次</option><option value="48">未来 48 次</option></select></label>
+      </div>
+      <div class="ns-sec"><b id="gf-next">—</b></div>
+      <p class="ug-note" id="gf-meta">—</p>
+      <ul class="uf-geodes" id="gf-rows"><li class="empty">还没读到存档</li></ul>
+      <p class="ug-note" id="gf-pool"></p>
+      <div class="ug-btns"><button id="gf-refresh" class="ghost ug-btn" type="button">重新读取</button></div>
+    </div>
+  </details>
+  <p class="sec-label has-act">自动化任务<em>功能互斥，开启一个功能会自动关闭其他功能</em><button id="auto-stop-all" class="sec-stop" type="button" title="把这一栏的功能一次全关掉">一键关闭</button></p>
+  <details class="pane" id="pane-dex">
+    <summary><b>图鉴捕捉</b><span class="brief" id="brief-dex"></span></summary>
+    <div class="pane-body">
+      <p class="pane-hint">从存档里挑出<b>还没抓到过</b>的宝可梦，直接告诉你去哪抓、缺什么条件；刷不到就自动换图重进。传说 / 幻兽获取方式特殊，不纳入自动捕捉。</p>
+
+      <div class="run" id="dex-phase" data-state="off"><b class="rst">未启动</b><span class="rt">正在检测连接…</span></div>
+
+      <div class="dx-env" id="dx-env">
+        <span>当前关天气 <b id="dx-weather">—</b></span>
+        <span>当前时段 <b id="dx-time">—</b></span>
+        <span>已解锁到第 <b id="dx-unlock">—</b> 章</span>
+      </div>
+
+      <div class="dx-sec"><b>地区缺口</b><span id="dx-gap-meta">四地区 · 按未捕捉口径</span></div>
+      <ul class="dx-gaps" id="dx-gaps"><li class="empty">还没读到存档</li></ul>
+
+      <div class="dx-sec"><b>未捕捉清单</b><span id="dx-list-meta">—</span></div>
+      <div class="dx-totals" id="dx-totals">—</div>
+      <p class="dx-cat-tip" id="dx-cat-tip">点任一分类只看这一类，再点一次取消；图标与配色取自游戏。</p>
+      <ul class="dex-plan dx-list" id="dex-plan"><li class="empty">点「刷新清单」读取存档</li></ul>
+      <p class="ug-note" id="dex-note">—</p>
+
+      <!-- 第三十八批：两个模式互斥——没选中的那块整块压灰（点一下就切过去），
+           跑起来之后两块一起锁住，必须先停才能换 -->
+      <div class="farm-mode" id="dex-mode">
+        <label class="farm-pick" data-mode="missing">
+          <input type="radio" name="dexMode" value="missing" checked>
+          <span><b>一键补全未捕捉</b><em>按状态卡挑最该先抓的目标 · 点一下就重新读存档</em></span>
+        </label>
+        <label class="farm-pick" data-mode="target">
+          <input type="radio" name="dexMode" value="target">
+          <span><b>捕捉指定宝可梦</b><em>一直刷同一种，直到抓到它的闪光才停</em></span>
+        </label>
+        <!-- 第六十九批：原来「定点循环」里的刷洛托姆整套搬到这里（普通洛托姆 + 5 个形态逐个追踪） -->
+        <label class="farm-pick" data-mode="rotom">
+          <input type="radio" name="dexMode" value="rotom">
+          <span><b>刷洛托姆</b><em>先抓普通洛托姆，再逐只去对应章节的「特别的相遇」格 · 到手自动换下一个</em></span>
+        </label>
+      </div>
+
+      <!-- 第七十二批：指定宝可梦的输入框原来排在洛托姆清单**下面**，
+           选「刷洛托姆」时它被整份清单顶到了卡片底部，跟自己的单选项隔了一大截。
+           现在紧贴在模式卡下面，并且只有在「捕捉指定宝可梦」时露出来。 -->
+      <div class="dex-target-row" id="dex-target-row" hidden>
+        <input id="dex-target" type="text" placeholder="中文名 / 图鉴号，例：皮卡丘、25、#25" autocomplete="off" spellcheck="false">
+        <button id="dex-find" class="tiny" type="button">查找</button>
+      </div>
+      <p class="dex-resolve" id="dex-resolve" hidden>支持 493 个中文名、图鉴号，以及游戏里显示的法 / 英文名</p>
+
+      <div class="dx-rotom" id="dx-rotom" hidden>
+        <div class="dx-sec"><b>洛托姆形态</b><span id="dx-rotom-meta">勾要刷的形态</span></div>
+        <ul class="dex-plan dx-list dx-rotom-list" id="dx-rotom-list"><li class="empty">还没读到存档</li></ul>
+        <!-- 第八十一批：这里原来那段「形态各自固定一章 / 只在相遇格刷新 / 没刷出就立刻重刷」
+             的说明文字，玩家要求删掉，已整段移除（判定逻辑不受影响）。 -->
+      </div>
+
+      <div class="dex-checks">
+        <!-- 第八十七批：开始捕捉时顺手把两种果子（蔓莓果 + 谜芝果）加入自动喂食候选。
+             第一百一十八批：按玩家要求改成默认关，且需「自动喂食」总闸打开才生效。 -->
+        <label><input id="dex-auto-feed" type="checkbox" data-key="dexAutoFeed"> 开启图鉴捕捉时自动喂两种果子（蔓莓果 + 谜芝果；默认关，且需「自动喂食」总闸打开才生效）</label>
+        <label><input id="dex-until-shiny" type="checkbox" checked> 指定宝可梦一直刷到本轮抓到闪光才停（默认开；闪光图鉴已解锁也能继续刷；关掉则抓到一只就收工）</label>
+        <label><input id="dex-cond-first" type="checkbox" checked> 天气 / 时段限定且已生效的优先捕捉</label>
+        <!-- 第一百一十五批：等待选项。默认关 = 没有可抓的就自动关闭功能；
+             勾上后 = 勾选目标暂不可捕捉时原地等条件生效，不切图、不关闭，条件回来继续抓。 -->
+        <label><input id="dex-wait-cond" type="checkbox"> <b>等待条件</b>（勾上后：暂不可捕捉的目标不切图、不关闭功能，原地等天气 / 时段生效；不勾则没有可抓的就自动关闭）</label>
+        <!-- 第五十五批：等轮换 / 进化路径 / 自动关单一确认弹窗三项默认开启且隐藏，
+             值由 dexCfgFromUI() 与 dex-hunter.js 的 sanitize() 同时钉死。 -->
+        <label><input id="dex-hud" type="checkbox" data-key="dexHud" checked> 游戏页内悬浮看板（功能启动才出现，停止自动收起，可拖动 / 可折叠）</label>
+      </div>
+
+      <div class="ug-btns">
+        <button id="dex-scan" class="ghost ug-btn">刷新清单</button>
+        <button id="dex-now" class="ghost ug-btn">开始捕捉</button>
+        <button id="dex-stop" class="ghost ug-btn ug-stop" disabled>停止</button>
+      </div>
+    </div>
+  </details>
+  <details class="pane" id="pane-leg">
+    <summary><b>传说追踪</b><span class="brief" id="brief-leg"></span></summary>
+    <div class="pane-body">
+      <p class="pane-hint">选一只 → 点「立即前往」开始；之后跟着它换道馆反复打，直到捕获</p>
+      <!-- 第二十二批：原来「运行状态行」和「正在追的那只」两块并成一块，状态标签贴在名字前面 -->
+      <!-- 第二十四批：没在追的时候不再写「没在追」三个字（左边标签已经说明），名字行空着就整行收起 -->
+      <div class="leg-cur" id="leg-cur" data-state="off">
+        <b class="rst">未启动</b>
+        <div class="leg-cur-t">
+          <span class="leg-cur-nm"><b id="leg-cur-name"></b></span>
+          <small id="leg-cur-sub">在下面选一只后点「立即前往」</small>
+        </div>
+      </div>
+      <ul class="leg-list" id="leg-list"></ul>
+      <div class="dex-checks">
+        <label><input id="leg-hud" type="checkbox" data-key="legHud" checked> 游戏页内悬浮看板（功能启动才出现，停止自动收起，可拖动 / 可折叠）</label>
+        <!-- 第一百一十八批：传说追踪的顺手喂果独立开关，默认关且受总闸约束 -->
+        <label><input id="leg-auto-feed" type="checkbox" data-key="legAutoFeed"> 开始追踪时顺手喂两种果子（蔓莓果 + 谜芝果；默认关，且需「自动喂食」总闸打开才生效）</label>
+      </div>
+      <div class="ug-btns">
+        <button id="leg-now" class="ghost ug-btn">立即前往（开始追踪）</button>
+        <button id="leg-stop" class="ghost ug-btn ug-stop" disabled>停止追踪</button>
+      </div>
+    </div>
+  </details>
+  <details class="pane" id="pane-item">
+    <summary><b>稀有道具刷取</b><span class="brief" id="brief-item"></span></summary>
+    <div class="pane-body">
+      <p class="pane-hint">勾选想要的稀有道具，按勾选顺序<b>一种一种刷，每种只拿一次</b>（到手变「已获得」）。地图没解锁、或这会儿天气 / 时段不对的自动排到队尾，先刷别的；全部到手后自动停。</p>
+      <div class="run" id="it-phase" data-state="off"><b class="rst">未启动</b><span class="rt">正在检测连接…</span></div>
+      <div class="fm-sec"><b>意向道具</b><span id="it-target-meta"></span></div>
+      <div class="fm-order" id="it-order" hidden></div>
+      <div class="fm-targets" id="it-targets"></div>
+      <div class="fm-checks">
+        <label><input id="it-hud" type="checkbox" checked> 游戏页内悬浮看板（功能启动才出现，停止自动收起，可拖动 / 可折叠）</label>
+      </div>
+      <div class="ug-btns">
+        <button id="it-now" class="ghost ug-btn">开始刷取</button>
+        <button id="it-stop" class="ghost ug-btn ug-stop" disabled>停止</button>
+      </div>
+      <div class="fm-tally" id="it-tally"></div>
+      <ul class="fm-logs" id="it-logs"><li class="empty">还没有事件</li></ul>
+      <div class="ug-btns"><button id="it-clear" class="ghost ug-btn">清零统计</button></div>
+      <p class="ug-note" id="it-note"></p>
+    </div>
+  </details>
+  <details class="pane" id="pane-berry">
+    <summary><b>树果刷取</b><span class="brief" id="brief-berry"></span></summary>
+    <div class="pane-body">
+      <p class="pane-hint">只在<b>效率最高的两张已解锁地图</b>之间来回切、各收一趟。<b>勾一种就只刷那一种</b>；勾「任意树果」就是所有树果一起算、只按总数统计。<b>无限刷，不限数量</b>。</p>
+      <div class="run" id="by-phase" data-state="off"><b class="rst">未启动</b><span class="rt">正在检测连接…</span></div>
+      <div class="fm-grid">
+        <div class="fm-cell"><small>地区 · 章节</small><b id="by-chapter">—</b></div>
+        <div class="fm-cell"><small>意向到手</small><b id="by-gains">—</b></div>
+      </div>
+      <div class="fm-sec"><b>意向树果</b><span id="by-target-meta"></span></div>
+      <div class="fm-targets" id="by-targets"></div>
+      <div class="fm-sec"><b>获取期望排行</b><span id="by-rank-meta"></span></div>
+      <ul class="fm-ranks" id="by-ranks"><li class="empty">还没扫描</li></ul>
+      <div class="fm-sec"><b>参数</b><span>改动即时生效</span></div>
+      <div class="fm-opts">
+        <label>选图
+          <select id="by-map-mode"><option value="auto">自动挑最高效</option><option value="manual">手动指定</option></select>
+        </label>
+        <label>指定地图 <select id="by-spot"></select></label>
+      </div>
+      <div class="fm-checks">
+        <label><input id="by-hud" type="checkbox" checked> 游戏页内悬浮看板（功能启动才出现，停止自动收起，可拖动 / 可折叠）</label>
+      </div>
+      <div class="ug-btns">
+        <button id="by-scan" class="ghost ug-btn">扫描地图</button>
+        <button id="by-now" class="ghost ug-btn">开始刷取</button>
+        <button id="by-stop" class="ghost ug-btn ug-stop" disabled>停止</button>
+      </div>
+      <div class="fm-tally" id="by-tally"></div>
+      <ul class="fm-logs" id="by-logs"><li class="empty">还没有事件</li></ul>
+      <div class="ug-btns"><button id="by-clear" class="ghost ug-btn">清零统计</button></div>
+      <p class="ug-note" id="by-note"></p>
+    </div>
+  </details>
+  <details class="pane" id="pane-farm">
+    <summary><b>联盟刷钱</b><span class="brief" id="brief-farm"></span></summary>
+    <div class="pane-body">
+      <p class="pane-hint">反复刷<b>联盟</b>：打完一轮自动重开，馆主那场跳过。联盟没通关时训练家有 <b>1.8 倍</b>赏金，所以默认<b>打完 4 天王就切走、永远不打冠军</b>，倍率一直留着；当前地区联盟没开时会自动回已解锁的那个地区。</p>
+      <div class="run" id="farm-phase" data-state="off"><b class="rst">未启动</b><span class="rt">点「开始联盟刷钱」就行</span></div>
+      <!-- 第二十二批：原来这里还有一条 #farm-note，跟上面的状态栏说的是同一件事，已删除 -->
+      <div class="ug-sum" id="farm-sum">收益：—</div>
+      <!-- 第五十九批：三档「打到第几位就切走重开」（对齐下载版）。
+           联盟没通关时训练家是 1.8 倍，通了就掉到半价，所以默认不打冠军。 -->
+      <div class="farm-mode">
+        <label class="farm-pick" data-mode="top3">
+          <input type="radio" name="farmMode" value="top3">
+          <span><b>只刷前 3 关</b><em>打完第 3 个天王就切走重开，第 4 关不打</em></span>
+        </label>
+        <label class="farm-pick" data-mode="uncleared">
+          <input type="radio" name="farmMode" value="uncleared" checked>
+          <span><b>不打冠军 · 默认</b><em>打完 4 天王就切走重开，永远不打冠军 —— 只要联盟没通关，训练家就一直是 1.8 倍赏金</em></span>
+        </label>
+        <label class="farm-pick" data-mode="cleared">
+          <input type="radio" name="farmMode" value="cleared">
+          <span><b>连冠军一起打完</b><em>打完整条联盟再重开；通关后赏金是半价，但训练家最多</em></span>
+        </label>
+      </div>
+      <ul class="farm-stat" id="farm-stat"><li class="empty">还没开始</li></ul>
+      <div class="dex-checks">
+        <label><input id="farm-hud" type="checkbox" data-key="farmHud" checked> 游戏页内悬浮看板（功能启动才出现，停止自动收起，可拖动 / 可折叠）</label>
+      </div>
+      <div class="ug-btns">
+        <button id="farm-now" class="ghost ug-btn">开始联盟刷钱</button>
+        <button id="farm-stop" class="ghost ug-btn ug-stop" disabled>停止联盟刷钱</button>
+      </div>
+    </div>
+  </details>
+  <details class="pane" id="pane-orb">
+    <summary><b>定点循环</b><span class="brief" id="brief-orb" data-state="off">未启动</span></summary>
+    <div class="pane-body">
+      <p class="pane-hint">在一个章节里从头走到<b>你指定的那个点</b>，然后切走再回来，一直循环。地区 / 章节 / 点位自己选，也可以先在游戏里走到想停的位置再点<b>「取当前」</b>。它和其它卡片<b>一次只跑一个</b>：开它会把别的停掉，别处开起来它也会自己停。刷洛托姆在「图鉴捕捉」里。</p>
+      <div class="run" id="orb-phase" data-state="off"><b class="rst">未启动</b><span class="rt">正在检测连接…</span></div>
+      <!-- 第六十九批：目标只剩「定点循环」一种，下拉没有意义了，整行去掉；
+           刷洛托姆（选形态）整套搬到「图鉴捕捉」 -->
+      <div class="orb-row" id="point-row">
+        <label for="point-region">定点</label>
+        <select id="point-region" title="地区 / 模式">
+          <option value="dust2">尘土双章</option>
+          <option value="kanto">关都</option>
+          <option value="johto">城都</option>
+          <option value="hoenn">丰缘</option>
+          <option value="sinnoh">神奥</option>
+          <option value="unova">合众</option>
+        </select>
+        <select id="point-ch" title="章节"></select>
+        <select id="point-ch2" title="第二章节（尘土双章）" style="display:none"></select>
+        <select id="point-step" title="时间线第几个点"></select>
+        <button id="point-take" class="ghost ug-btn" type="button">取当前</button>
+      </div>
+      <p class="ug-note" id="orb-note">—</p>
+      <!-- 第六十七批：目标只剩「定点循环 / 刷洛托姆」，宝珠计数行没有对应预设了，先收起 -->
+      <div class="ug-sum" id="orb-sum" hidden>金刚宝珠 — · 白玉宝珠 —</div>
+      <div class="ug-sum" id="orb-tally">累计获得 0 次道具</div>
+      <ul class="ug-slots" id="orb-items"><li class="empty">还没有统计</li></ul>
+      <div class="ug-sum" id="orb-cycles">循环 0 次</div>
+      <ul class="ug-slots" id="orb-log"><li class="empty">还没开始</li></ul>
+      <div class="dex-checks">
+        <label><input id="orb-hud" type="checkbox" data-key="orbHud" checked> 游戏页内悬浮看板（功能启动才出现，停止自动收起，可拖动 / 可折叠）</label>
+      </div>
+      <div class="ug-btns">
+        <button id="orb-now" class="ghost ug-btn" type="button">开始</button>
+        <button id="orb-stop" class="ghost ug-btn ug-stop" type="button" disabled>停止</button>
+      </div>
+      <div class="ug-btns">
+        <button id="orb-clear" class="ghost ug-btn" type="button">统计清零</button>
+      </div>
+      <label class="sw sub">
+        <input id="orb-on" type="checkbox" data-key="orbOn">
+        <span class="track"></span>
+        <span class="txt"><em>刷新页面后自动继续</em><small>关掉就停；重开游戏页不会自己跑</small></span>
+      </label>
+    </div>
+  </details>
+  <!-- 1.9.57：整块藏起来了（回到 1.9.55 之前）。想放出来：去掉 hidden，
+       再把 content.js 里的 RAID_PANEL 改成 true。 -->
+  <details class="pane" id="pane-raid" hidden>
+    <summary><b>异色团体战</b><span class="brief" id="brief-raid"></span></summary>
+    <div class="pane-body">
+      <p class="pane-hint">异色团体战：抽到哪个地区就打哪个，一轮打完自动接着打，直到今天的次数用完。</p>
+      <div class="run" id="raid-phase" data-state="off"><b class="rst">未启动</b><span class="rt">打开团体战页后可用</span></div>
+      <p class="ug-note" id="raid-note">—</p>
+      <div class="ug-sum" id="raid-sum">新团体战：—</div>
+      <ul class="ug-slots" id="raid-list"><li class="empty">打开一次异色团体战页就能读到 4 个地区</li></ul>
+      <div class="ug-btns">
+        <button id="raid-now" class="ghost ug-btn">开始连战</button>
+        <button id="raid-stop" class="ghost ug-btn ug-stop" disabled>停止连战</button>
+      </div>
+    </div>
+  </details>
+  <p class="sec-label">一次性操作<em>点一次就完事，不占页面</em></p>
+  <details class="pane" id="pane-stab" open>
+    <summary><b>本系威力排名</b><span class="brief" id="brief-stab" data-state="idle">18 属性战力榜</span></summary>
+    <div class="pane-body">
+      <p class="pane-hint">只读数据表算出来的参考榜：按本系招的期望威力给宝可梦排序，跟游戏运行状态无关。</p>
+      <div class="stab-tabs" id="stab-tabs"></div>
+      <table class="stab" id="stab-tbl"></table>
+      <p class="ug-note stab-eg" id="stab-eg">—</p>
+      <p class="ug-note">只算本系招，每只取期望最高的一招（双属性两个属性各排一次）。
+        命中率是游戏自己的规则：威力 ≤40 必中，≥150 恒定 80%，中间线性折算。
+        进化链前面形态能学的招也算进来；自爆、大爆炸、一击必杀、同归于尽不参与排名。</p>
+    </div>
+  </details>
+  <details class="pane" id="pane-fav">
+    <summary><b>宝可梦收藏</b><span class="brief" id="brief-fav" data-state="idle">未开启</span></summary>
+    <div class="pane-body">
+      <p class="pane-hint">仓库、培育屋、配队窗口里的星星；按图鉴号记，进化 / 合并都不会丢</p>
+      <!-- 第二十二批：一次性操作类卡片不放运行状态行，状态由右上角角标和开关自己表达 -->
+      <label class="sw sub">
+        <input type="checkbox" data-key="favOn">
+        <span class="track"></span>
+        <span class="txt"><em>收藏功能</em><small>关掉后游戏里不再出现星星和「☆ 收藏」按钮；已经记下的收藏还在</small></span>
+      </label>
+      <label class="sw sub">
+        <input type="checkbox" data-key="favPinOn">
+        <span class="track"></span>
+        <span class="txt"><em>收藏置顶</em><small>开（默认）：只在「自定义」排序下把收藏的宝可梦排到仓库 / 培育屋 / 配队窗最前；其它排序仍由游戏自己决定</small></span>
+      </label>
+      <div class="ug-btns">
+        <button id="fav-clear" class="ghost ug-btn ug-stop">全部取消收藏</button>
+      </div>
+      <p class="ug-note" id="fav-note">会同时删掉扩展里的收藏表和网页里的本地备份，点了要确认两次</p>
+    </div>
+  </details>
+  <!-- 第二十二批：跟「宝可梦收藏」同类的一次性操作卡片，统一收到列表最下面、默认收起，
+       不放运行状态行；右上角只在读到状态后显示「开启 X/Y」 -->
+  <details class="pane" id="pane-keepdup">
+    <summary><b>保留重复</b><span class="brief" id="brief-keepdup" data-state="idle">手动操作</span></summary>
+    <div class="pane-body">
+      <p class="pane-hint">一键把<b>所有宝可梦家族</b>的「保留重复」打开或关闭。插件不读写存档、不改任何存档字段，只调用游戏自己的开关（等同在每张详情卡上逐个点「保留重复」），保存也由游戏自己完成。</p>
+      <div class="ug-btns">
+        <button id="kd-on" class="ghost ug-btn" type="button">一键全部开启</button>
+        <button id="kd-off" class="ghost ug-btn" type="button">一键全部关闭</button>
+        <button id="kd-refresh" class="ghost ug-btn" type="button">读取状态</button>
+      </div>
+      <div class="kd-note" id="kd-note"></div>
+    </div>
+  </details>
+
+  <section class="actions">
+    <button id="reconnect" class="primary">立即重连</button>
+  </section>
+
+  <section class="logs" id="logs">
+    <div class="logs-head">
+      <b>事件日志</b>
+      <span class="log-count" id="log-count">0 条</span>
+      <span class="log-tools">
+        <button id="log-clear" class="tiny" type="button">清空</button>
+        <button id="log-copy" class="tiny" type="button">复制</button>
+      </span>
+    </div>
+    <div class="log-filters" id="log-filters">
+      <button type="button" data-level="all" class="on">全部</button>
+      <button type="button" data-level="info">提示</button>
+      <button type="button" data-level="ok">成功</button>
+      <button type="button" data-level="warn">警告</button>
+      <button type="button" data-level="error">错误</button>
+    </div>
+    <ul id="log"><li class="empty">还没有事件</li></ul>
+  </section>
+
+  <!-- 第一百一十九批：配置本地持久化（新增 UI 页面） -->
+  <details class="pane" id="pane-cfg">
+    <summary><b>配置备份</b><span class="brief" id="brief-cfg">更新不重设</span></summary>
+    <div class="pane-body">
+      <p class="pane-hint">插件已固定扩展 ID，并把全部设置自动备份到游戏页本地；更新插件不用重新设置。也可以手动导出 / 导入一份配置。</p>
+      <div class="ug-btns">
+        <button id="cfg-export" class="ug-btn" type="button">导出配置</button>
+        <button id="cfg-import" class="ug-btn" type="button">导入配置</button>
+        <button id="cfg-restore" class="ug-btn ghost" type="button">从本地备份恢复</button>
+      </div>
+      <input id="cfg-file" type="file" accept="application/json,.json" hidden>
+      <p class="pane-hint" id="cfg-note" data-tone="idle">正在读取本地备份状态…</p>
+    </div>
+  </details>
+
+  <!-- 第六十九批：页脚先放权益声明（免费、付费都是被骗），再放原来的只读说明 -->
+  <footer>
+    <p class="rights">该软件为免费提供，任何付费渠道都属被骗。</p>
+    <p class="fine">只读存档与页面 DOM、模拟点击操作界面；不改存档、不拦截请求、不上传数据</p>
+  </footer>
+
+  <div id="feed-tip" class="feed-tip" hidden></div>
+
+  <script src="defaults.js"></script>
+  <script src="game-ui.js"></script>
+  <script src="items-data.js"></script>
+  <script src="dex-data.js"></script>
+  <script src="chapters-data.js"></script>
+  <script src="stab.js"></script>
+  <script src="underground-ui.js"></script>
+  <script src="popup.js?v=1.32"></script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+  <!-- 第九十九批：玩家给了游戏里的「雨云」图标，照着做一份（白云 + 深色描边 + 蓝雨滴），
+       浅色背景上也看得见 -->
+  <path d="M7.1 15.2h9.7a3.4 3.4 0 0 0 .3-6.77 4.9 4.9 0 0 0-9.32-1.2A3.55 3.55 0 0 0 7.1 15.2Z"
+        fill="#ffffff" stroke="#243043" stroke-width="1.5" stroke-linejoin="round"/>
+  <g stroke="#2aa8e0" stroke-width="1.9" stroke-linecap="round">
+    <path d="M8.6 17.9v1.9"/>
+    <path d="M12 17.9v1.9"/>
+    <path d="M15.4 17.9v1.9"/>
+  </g>
+</svg>
