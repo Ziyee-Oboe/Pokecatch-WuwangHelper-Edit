@@ -471,7 +471,11 @@ GM_addStyle([
   '#pcg-efh .pcg-prog { font-size: 11px; padding: 2px 6px; border-radius: 4px; font-weight: 500; background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }',
   '#pcg-efh.pcg-dark .pcg-prog { background: rgba(245,158,11,.12); color: #fcd34d; border-color: #78350f; }',
   '#pcg-efh .pcg-prog.pcg-prog-shiny { background: #ffedd5; color: #9a3412; border-color: #fdba74; }',
-  '#pcg-efh.pcg-dark .pcg-prog.pcg-prog-shiny { background: rgba(234,88,12,.15); color: #fdba74; border-color: #7c2d12; }'
+  '#pcg-efh.pcg-dark .pcg-prog.pcg-prog-shiny { background: rgba(234,88,12,.15); color: #fdba74; border-color: #7c2d12; }',
+  '#pcg-efh .pcg-prog.pcg-prog-ditto { background: #e0f2fe; color: #0369a1; border-color: #7dd3fc; font-weight: 600; }',
+  '#pcg-efh.pcg-dark .pcg-prog.pcg-prog-ditto { background: rgba(14,165,233,.15); color: #7dd3fc; border-color: #0c4a6e; }',
+  '#pcg-efh .pcg-prog.pcg-prog-empty { background: #f1f5f9; color: #94a3b8; border-color: #cbd5e1; text-decoration: line-through; }',
+  '#pcg-efh.pcg-dark .pcg-prog.pcg-prog-empty { background: rgba(148,163,184,.12); color: #64748b; border-color: #334155; }'
 ].join('\n'));
 
 /* ---------- 创建面板 ---------- */
@@ -658,18 +662,19 @@ function paint() {
   html += '<div class="pcg-sec-title"><span>亲代池 (' + win.poolSize + ' 只 · ' + effectiveThreshold + ' 档)';
   if (win.poolShiny > 0) html += ' <span style="font-weight:400;opacity:.75;">含 ' + win.poolShiny + ' 只闪</span>';
   html += '</span></div>';
-  if (win.pool.length) {
-    html += '<div class="pcg-prog-list">';
-    for (var pi = 0; pi < win.pool.length; pi++) {
-      var pp = win.pool[pi];
-      var isShiny = pp.shiny;
-      html += '<span class="pcg-prog' + (isShiny ? ' pcg-prog-shiny' : '') + '">'
-            + (isShiny ? '✦ ' : '') + dexName(pp.id) + '</span>';
-    }
-    html += '</div>';
-  } else {
-    html += '<div class="pcg-empty">没有可繁殖亲代（百变怪不算）</div>';
+  html += '<div class="pcg-prog-list">';
+  /* 百变怪固定标签（0号位勾/叉，放最前面） */
+  var hasDitto = info.hasDitto !== false;
+  html += '<span class="pcg-prog pcg-prog-ditto' + (hasDitto ? '' : ' pcg-prog-empty') + '" title="' +
+    (hasDitto ? '百变怪 ✓ 0 号位' : '百变怪 ✗ 未找到') + '">' +
+    (hasDitto ? '✓ 百变怪' : '✗ 百变怪') + '</span>';
+  for (var pi = 0; pi < win.pool.length; pi++) {
+    var pp = win.pool[pi];
+    var isShiny = pp.shiny;
+    html += '<span class="pcg-prog' + (isShiny ? ' pcg-prog-shiny' : '') + '">'
+          + (isShiny ? '✦ ' : '') + dexName(pp.id) + '</span>';
   }
+  html += '</div>';
   /* 下一颗小卡片（和后续命中同 pcg-row 样式，追加在亲代池末尾） */
   if (nx) {
     var nxWho = nx.parent
@@ -686,33 +691,30 @@ function paint() {
   }
   html += '</div>';
 
-  /* ---- 块二：最近的闪（后续命中 + 元信息，不再有下一颗大卡片） ---- */
-  var hits = mergeHits(info);
+  /* ---- 块二：最近的闪 ---- */
+  var hits = mergeHits(info);   // 原版 cap 10/10/3 已在 mergeHits 内
   html += '<div class="pcg-sec"><div class="pcg-sec-title"><span>✦ 最近的闪</span></div>';
 
-  /* 后续命中（原版 cap 10/10/3 合并后按 k 升序取前 5） */
-  var pick = hits.length ? hits[0] : null;
-  if (pick) {
-    var rest = hits.slice(0, 5);
-    for (var ri = 0; ri < rest.length; ri++) {
-      var it = rest[ri].row;
+  if (hits.length) {
+    for (var ri = 0; ri < hits.length; ri++) {
+      var it = hits[ri].row;
       var st2 = Math.max(0, it.k - laid);
       var who2 = it.parent
         ? ((it.parent.shiny ? '✦ ' : '') + '槽' + it.parent.slot + ' ' + dexName(it.parent.id))
         : '无亲代';
-      var prefix = st2 === 0 ? '下一颗' : '再过 ' + st2 + ' 颗';
+      var prefix = st2 === 0 ? '下一颗' : ('+' + st2 + ' · k=' + it.k);
       var rowRoll = it.roll != null ? (it.roll < 0.01 ? it.roll.toFixed(5) : it.roll.toFixed(4)) : '';
       var rowTh = it.parent && it.parent.shiny ? '1/16' : '1/512';
       html += '<div class="pcg-row c4" title="roll=' + rowRoll + ' · threshold=' + rowTh + ' · k=' + it.k + '">';
-      html += '<div><span class="pcg-k">' + prefix + ' · k=' + it.k + '</span>' +
-        '<span class="pcg-parent-badge">' + who2 + '</span>' + catTag(rest[ri].cat) + '</div>' +
+      html += '<div><span class="pcg-k">' + prefix + '</span>' +
+        '<span class="pcg-parent-badge">' + who2 + '</span>' + catTag(hits[ri].cat) + '</div>' +
         '<div class="pcg-val">' + (it.etaMs > 0 ? fmtDur(it.etaMs) : '—') + '</div></div>';
     }
   } else {
     html += '<div class="pcg-empty">扫描范围内暂无命中</div>';
   }
 
-  /* 元信息行（去掉 roll 显示） */
+  /* 元信息行（百变怪已挪到亲代池，这里去掉百变怪比特） */
   if (nx) {
     var stTxt;
     if (nx.plainShiny) stTxt = '<span class="pcg-shiny-badge">✦ 本颗即闪</span>';
@@ -720,7 +722,6 @@ function paint() {
     else if (nx.bxShiny) stTxt = '<span class="pcg-tag t-f">✦ 喂果才闪</span>';
     else stTxt = '<span style="opacity:.6">不闪</span>';
     var bits = [];
-    bits.push('百变怪 ' + (info.hasDitto === false ? '✗ 无' : '✓ 0号位'));
     if (info.bx) bits.push('已吃果 ×2');
     if (info.poolShiny > 0) bits.push('亲代池含 ' + info.poolShiny + ' 闪');
     html += '<div class="pcg-row" style="background:rgba(255,255,255,.3);"><div>' + bits.join(' · ') + '</div>' +
