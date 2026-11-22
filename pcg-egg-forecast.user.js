@@ -2,7 +2,7 @@
 // @name         Poke'Catch 闪光蛋预测面板
 // @name:en     Poke'Catch Shiny Egg Forecast
 // @namespace    pcg-egg-forecast
-// @version      0.1.1
+// @version      0.2.1
 // @description  纯计算，零网络请求。读取游戏存档的 trainerSeed + pension.laid，用游戏同款 53 位确定性哈希预测未来每颗蛋是否闪光、roll 值、亲代抽取、多久后是闪。
 // @match        *://pokecatch-online.netlify.app/*
 // @run-at       document-idle
@@ -56,11 +56,6 @@ var CATEGORY = {
 };
 
 /* ---------- 工具 ---------- */
-function num(v, d) {
-  var n = Number(v);
-  return isFinite(n) ? n : (d || 0);
-}
-function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
 function fmtDur(ms) {
   if (!isFinite(ms) || ms <= 0) return '就绪';
   var m = Math.ceil(ms / 60000);
@@ -84,17 +79,6 @@ function eggHash(str) {
   return (4294967296 * (2097151 & C) + (S >>> 0)) / 9007199254740992;
 }
 
-/* ---------- 闪光阈值 — 与游戏 Ao(t) 逐字一致 ---------- */
-function shinyThreshold(opts) {
-  opts = opts || {};
-  var base = K.SHINY_RATE;
-  var o = 0;
-  if (opts.sp) o = (+opts.sp === 2) ? K.SHINY_PARENT_RATE : K.SHINY_PARENT_RATE_OLD;
-  var th = o ? Math.max(o, base) : base;
-  if (opts.bx) th = th * K.SHINY_BERRY_MULT;
-  return th;
-}
-
 /* ---------- 训练家种子 ---------- */
 function trainerSeed(save) {
   var t = (save && save.trainer) || null;
@@ -105,22 +89,6 @@ function trainerSeed(save) {
 /* ---------- 蛋 k 的 roll ---------- */
 function eggKHash(k, save) {
   return eggHash(trainerSeed(save) + '|egg|' + k + '|0');
-}
-
-/* ---------- 一颗蛋是不是闪光 ---------- */
-function eggIsShiny(e, save) {
-  if (!e || typeof e !== 'object') return false;
-  if (Object.prototype.hasOwnProperty.call(e, 'shiny')) return !!e.shiny;  // 旧存档
-  var threshold = shinyThreshold(e);
-  var roll;
-  if (typeof e.k === 'number' && isFinite(e.k) && Math.floor(e.k) === e.k) {
-    roll = eggKHash(e.k, save);  // 新蛋
-  } else {
-    var key = String(e.uid != null ? e.uid : (e.laidAt != null ? e.laidAt : ''));
-    if (!key) return false;
-    roll = eggHash(key);  // 旧蛋回退
-  }
-  return roll < threshold;
 }
 
 /* ============================================================================
@@ -283,7 +251,7 @@ function windowScan(save, days) {
   var laid = Number.isFinite(pen.laid)
     ? pen.laid
     : ((+save.stats && +save.stats.hatched || 0) + (Array.isArray(pen.eggs) ? pen.eggs.length : 0));
-  var goal = Number(pen.eggGoal) || K.EGG_MS;  // 每颗蛋的周期（ms）
+  var goal = Math.max(Number(pen.eggGoal) || K.EGG_MS, 60000);  // 每颗蛋周期（ms），异常小值钳到 1 分钟防窗口炸开
   var bxNext = !!pen.bx;
   var base = K.SHINY_RATE;
   var parentRate = Math.max(K.SHINY_PARENT_RATE, base);
@@ -325,20 +293,14 @@ function windowScan(save, days) {
     // 第 0 颗（下一颗）吃果状态：bxNext 会让阈值 ×2
     if (i === 0 && bxNext) threshold = threshold * mult;
 
-    /* 分类判定（和 classifyRow 逻辑一致，这里 inline 避免 roll 被重新算） */
+    /* 分类判定（原版 popup 口径：固定阈值带，不查亲代是否闪光——
+       原版 scanFixed/scanFlip 均只看 roll 落在哪一段，亲代哈希仅用于展示名字） */
     var cat;
-    var hasShinyParent = parent && parent.shiny;
-    if (hasShinyParent) {
-      var thFlash = parentRate * (i === 0 && bxNext ? 1 : 1);  // flash 区间起点
-      var thFlashTop = parentRate * mult;
-      if (roll < parentRate) cat = 4;                       // 闪光亲代裸闪
-      else if (roll < thFlashTop) cat = 5;                 // 闪光亲代吃果
-      else cat = 1;
-    } else {
-      if (roll < base) cat = 2;                             // 普通亲代裸闪
-      else if (roll < base * mult) cat = 3;                 // 普通亲代吃果
-      else cat = 1;
-    }
+    if (roll < base) cat = 2;                        // 普通亲代裸闪（<1/512，必闪）
+    else if (roll < base * mult) cat = 3;            // 普通亲代吃果（[1/512,1/256)，喂果必闪）
+    else if (roll < parentRate) cat = 4;             // 闪光亲代（[1/256,1/16)，抽中闪光亲代即裸闪）
+    else if (roll < parentRate * mult) cat = 5;      // 吃果闪光亲代（[1/16,1/8)，抽中闪光亲代+喂果才闪）
+    else cat = 1;
 
     var row = {
       step: i, k: k, roll: roll, threshold: threshold,
@@ -439,17 +401,16 @@ GM_addStyle([
   '#pcg-efh.pcg-dark .pcg-row.c4 { background: linear-gradient(90deg,#431407,#7c2d12); border-color: #9a3412; }',
   '#pcg-efh .pcg-row.c5 { background: linear-gradient(90deg,#faf5ff,#f3e8ff); border-color: #e9d5ff; }',
   '#pcg-efh.pcg-dark .pcg-row.c5 { background: linear-gradient(90deg,#3b0764,#581c87); border-color: #6b21a8; }',
+  '#pcg-efh.pcg-dark .pcg-row.c1 { background: rgba(255,255,255,.04); border-color: #2a2f38; }',
   '#pcg-efh .pcg-k { font-family: "SF Mono",Menlo,Consolas,monospace; font-size: 11px; color: #5a616b; font-weight: 500; }',
   '#pcg-efh.pcg-dark .pcg-k { color: #9aa3af; }',
   '#pcg-efh .pcg-val { font-variant-numeric: tabular-nums; font-weight: 600; }',
+  '#pcg-efh.pcg-dark .pcg-val { color: #e6e9ef; }',
   '#pcg-efh .pcg-bar { height: 5px; background: #e4e6ea; border-radius: 3px; overflow: hidden; margin-top: 3px; }',
   '#pcg-efh.pcg-dark .pcg-bar { background: #2a2f38; }',
   '#pcg-efh .pcg-bar > div { height: 100%; border-radius: 3px; transition: width .3s; }',
-  '#pcg-efh .pcg-row.c2 .pcg-bar > div { background: linear-gradient(90deg,#fbbf24,#f59e0b); }',
-  '#pcg-efh .pcg-row.c3 .pcg-bar > div { background: linear-gradient(90deg,#818cf8,#6366f1); }',
-  '#pcg-efh .pcg-row.c4 .pcg-bar > div { background: linear-gradient(90deg,#fb923c,#ea580c); box-shadow: 0 0 8px rgba(249,115,22,.4); }',
-  '#pcg-efh .pcg-row.c5 .pcg-bar > div { background: linear-gradient(90deg,#c084fc,#9333ea); box-shadow: 0 0 8px rgba(168,85,247,.4); }',
   '#pcg-efh .pcg-row.c1 .pcg-bar > div { background: #cbd5e1; }',
+  '#pcg-efh.pcg-dark .pcg-row.c1 .pcg-bar > div { background: #475569; }',
   '#pcg-efh .pcg-parent-badge { font-size: 11px; padding: 0 4px; border-radius: 3px; background: rgba(255,255,255,.7); color: #0369a1; margin-left: 4px; border: 1px solid #bae6fd; }',
   '#pcg-efh.pcg-dark .pcg-parent-badge { background: rgba(56,189,248,.15); color: #7dd3fc; border-color: #0c4a6e; }',
   '#pcg-efh .pcg-cat-badge { font-size: 10px; padding: 1px 5px; border-radius: 3px; margin-left: 6px; font-weight: 600; letter-spacing: .02em; }',
@@ -473,15 +434,44 @@ GM_addStyle([
   '#pcg-efh .pcg-next-egg { padding: 10px; border-radius: 8px; border: 2px dashed #cbd5e1; margin-bottom: 12px; text-align: center; }',
   '#pcg-efh.pcg-dark .pcg-next-egg { border-color: #475569; }',
   '#pcg-efh .pcg-next-egg.c2 { border-style: solid; border-color: #f59e0b; background: linear-gradient(135deg,#fffbeb,#fef3c7); }',
+  '#pcg-efh.pcg-dark .pcg-next-egg.c2 { border-color: #92400e; background: linear-gradient(135deg,#451a03,#78350f); box-shadow: 0 0 12px rgba(245,158,11,.15); }',
   '#pcg-efh .pcg-next-egg.c3 { border-style: solid; border-color: #6366f1; background: linear-gradient(135deg,#eef2ff,#e0e7ff); }',
+  '#pcg-efh.pcg-dark .pcg-next-egg.c3 { border-color: #3730a3; background: linear-gradient(135deg,#1e1b4b,#312e81); box-shadow: 0 0 12px rgba(99,102,241,.15); }',
   '#pcg-efh .pcg-next-egg.c4 { border-style: solid; border-color: #ea580c; background: linear-gradient(135deg,#fff7ed,#ffedd5); box-shadow: 0 0 12px rgba(249,115,22,.2); }',
+  '#pcg-efh.pcg-dark .pcg-next-egg.c4 { border-color: #9a3412; background: linear-gradient(135deg,#431407,#7c2d12); box-shadow: 0 0 12px rgba(234,88,12,.25); }',
   '#pcg-efh .pcg-next-egg.c5 { border-style: solid; border-color: #9333ea; background: linear-gradient(135deg,#faf5ff,#f3e8ff); box-shadow: 0 0 12px rgba(168,85,247,.2); }',
+  '#pcg-efh.pcg-dark .pcg-next-egg.c5 { border-color: #6b21a8; background: linear-gradient(135deg,#3b0764,#581c87); box-shadow: 0 0 12px rgba(147,51,234,.25); }',
   '#pcg-efh .pcg-next-egg h3 { font-size: 14px; margin: 0 0 4px; font-weight: 800; }',
+  '#pcg-efh.pcg-dark .pcg-next-egg h3 { color: inherit; }',
   '#pcg-efh .pcg-next-egg .pcg-next-cat { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 700; margin-bottom: 4px; }',
   '#pcg-efh .pcg-next-egg.c2 .pcg-next-cat { background: #f59e0b; color: #fff; }',
   '#pcg-efh .pcg-next-egg.c3 .pcg-next-cat { background: #6366f1; color: #fff; }',
   '#pcg-efh .pcg-next-egg.c4 .pcg-next-cat { background: #ea580c; color: #fff; }',
-  '#pcg-efh .pcg-next-egg.c5 .pcg-next-cat { background: #9333ea; color: #fff; }'
+  '#pcg-efh .pcg-next-egg.c5 .pcg-next-cat { background: #9333ea; color: #fff; }',
+  '#pcg-efh .pcg-tag { display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 10px; font-size: 10.5px; font-weight: 600; }',
+  '#pcg-efh .pcg-tag.t-s { background: #fef3c7; color: #92400e; }',
+  '#pcg-efh .pcg-tag.t-f { background: #ffedd5; color: #9a3412; }',
+  '#pcg-efh .pcg-tag.t-p { background: #e2e8f0; color: #334155; }',
+  '#pcg-efh.pcg-dark .pcg-tag.t-s { background: #78350f; color: #fde68a; }',
+  '#pcg-efh.pcg-dark .pcg-tag.t-f { background: #7c2d12; color: #fdba74; }',
+  '#pcg-efh.pcg-dark .pcg-tag.t-p { background: #334155; color: #cbd5e1; }',
+  '#pcg-efh .pcg-shiny-badge { display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 10px; font-size: 10.5px; font-weight: 700; background: linear-gradient(135deg,#fef3c7,#fde68a); color: #92400e; border: 1px solid #fcd34d; }',
+  '#pcg-efh.pcg-dark .pcg-shiny-badge { background: linear-gradient(135deg,#78350f,#92400e); color: #fde68a; border-color: #b45309; }',
+  '#pcg-efh .pcg-warn { color: #b45309; }',
+  '#pcg-efh.pcg-dark .pcg-warn { color: #fbbf24; }',
+  '#pcg-efh .pcg-dist-bar { display: flex; gap: 3px; margin: 4px 0 8px; }',
+  '#pcg-efh .pcg-dist-seg { flex: 1; height: 14px; border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 9px; color: #fff; font-weight: 700; opacity: .9; }',
+  '#pcg-efh .pcg-dist-c1 { background: #cbd5e1; }',
+  '#pcg-efh.pcg-dark .pcg-dist-c1 { background: #334155; }',
+  '#pcg-efh .pcg-dist-c2 { background: linear-gradient(90deg,#fbbf24,#f59e0b); }',
+  '#pcg-efh .pcg-dist-c3 { background: linear-gradient(90deg,#818cf8,#6366f1); }',
+  '#pcg-efh .pcg-dist-c4 { background: linear-gradient(90deg,#fb923c,#ea580c); }',
+  '#pcg-efh .pcg-dist-c5 { background: linear-gradient(90deg,#c084fc,#9333ea); }',
+  '#pcg-efh .pcg-prog-list { display: flex; flex-wrap: wrap; gap: 4px; }',
+  '#pcg-efh .pcg-prog { font-size: 11px; padding: 2px 6px; border-radius: 4px; font-weight: 500; background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }',
+  '#pcg-efh.pcg-dark .pcg-prog { background: rgba(245,158,11,.12); color: #fcd34d; border-color: #78350f; }',
+  '#pcg-efh .pcg-prog.pcg-prog-shiny { background: #ffedd5; color: #9a3412; border-color: #fdba74; }',
+  '#pcg-efh.pcg-dark .pcg-prog.pcg-prog-shiny { background: rgba(234,88,12,.15); color: #fdba74; border-color: #7c2d12; }'
 ].join('\n'));
 
 /* ---------- 创建面板 ---------- */
@@ -597,6 +587,43 @@ function renderRow(row) {
     '</div>';
 }
 
+/* ---------- 计算缓存：重扫描很贵（原版口径扫 15 万次哈希），3 秒内重绘直接复用 ---------- */
+var calcCache = { at: 0, info: null, win: null };
+function calcBoth(save) {
+  var now = Date.now();
+  if (calcCache.info && now - calcCache.at < 3000) {
+    return { info: calcCache.info, win: calcCache.win };
+  }
+  var info = nextShinyInfo(save);            // 原版口径：最近的闪（三类清单）
+  var win = windowScan(save, WINDOW_DAYS);   // 窗口扫描：蛋列表
+  calcCache = { at: now, info: info, win: win };
+  return { info: info, win: win };
+}
+
+/* ---------- 三类命中合并，按 k 升序（原版 popup 同款：限额 10/10/3） ---------- */
+function mergeHits(info, cap) {
+  var groups = [
+    [info.shinyList, '闪光亲代'],
+    [info.flipShinyList, '吃果闪光亲代'],
+    [info.plainList, '普通亲代']
+  ];
+  var caps = [10, 10, 3];
+  var out = [];
+  for (var g = 0; g < groups.length; g++) {
+    var arr = groups[g][0] || [];
+    for (var i = 0; i < arr.length && i < caps[g]; i++) {
+      if (arr[i] && Number.isFinite(arr[i].k)) out.push({ row: arr[i], cat: groups[g][1] });
+    }
+  }
+  out.sort(function (a, b) { return a.row.k - b.row.k; });
+  return cap ? out.slice(0, cap) : out;
+}
+
+function catTag(cat) {
+  var cls = cat === '闪光亲代' ? 't-s' : cat === '吃果闪光亲代' ? 't-f' : 't-p';
+  return '<i class="pcg-tag ' + cls + '">' + cat + '</i>';
+}
+
 /* ---------- 主渲染 ---------- */
 function paint() {
   var panel = document.getElementById('pcg-efh');
@@ -611,102 +638,116 @@ function paint() {
     return;
   }
 
-  var info = windowScan(save, WINDOW_DAYS);
-  if (!info) {
+  var calc = calcBoth(save);
+  var info = calc.info, win = calc.win;
+  if (!info || !win) {
     body.innerHTML = '<div class="pcg-err">存档 pension 字段缺失</div>';
     footer.textContent = '存档不兼容';
     return;
   }
 
-  /* ---- 下一颗蛋大卡片 ---- */
-  var ni = info.next;
-  var nextC = CATEGORY[ni.cat] || CATEGORY[1];
-  var cardNote = '';
-  if (ni.cat >= 2 && info.bx) cardNote += '🫐 已喂靛莓果';
-  if (info.poolShiny > 0) cardNote += (cardNote ? ' · ' : '') + '亲代池含 ' + info.poolShiny + ' 只闪';
+  var laid = info.laid;
+  var nx = info.next;
+  var html = '';
 
-  var html = '<div class="pcg-next-egg c' + ni.cat + '">';
-  html += '<h3>' + nextC.emoji + ' 下一颗蛋 · k=' + ni.k + '</h3>';
-  html += '<span class="pcg-next-cat">' + nextC.name + '</span>';
-  html += '<div style="margin-top:6px;font-size:11.5px;color:inherit;opacity:.85;">';
-  html += 'roll=' + (ni.roll < 0.01 ? ni.roll.toFixed(5) : ni.roll.toFixed(4));
-  html += ' · ' + (ni.parent ? ((ni.parent.shiny ? '✦ ' : '') + dexName(ni.parent.id) + '·槽' + ni.parent.slot) : '无亲代');
-  html += '</div>';
-  if (cardNote) html += '<div style="margin-top:4px;font-size:11px;opacity:.75;">' + cardNote + '</div>';
-  html += '</div>';
+  /* ---- 块一：最近的闪（原版口径：三类清单合并取最近） ---- */
+  var hits = mergeHits(info);
+  var pick = hits.length ? hits[0] : null;
+  html += '<div class="pcg-sec"><div class="pcg-sec-title"><span>✦ 最近的闪</span></div>';
 
-  /* ---- 卡片 A：闪光候选（cat 2/3/4/5），按稀有度排序 ---- */
-  var shinyRows = [];
-  shinyRows = shinyRows.concat(info.buckets[4], info.buckets[2], info.buckets[5], info.buckets[3]);
-  html += '<div class="pcg-sec" style="background:#f8fafc;border-color:#e2e8f0;">';
-  html += '<div class="pcg-sec-title"><span>🌟 闪光预测（近 ' + info.days + ' 天）</span>';
-  html += '<span class="pcg-cat-count">' + shinyRows.length + ' / ' + info.totalScanned + '</span></div>';
-
-  if (shinyRows.length) {
-    /* 分布小统计条 */
-    html += '<div style="display:flex;gap:3px;margin:4px 0 8px;">';
-    var distBar = [4, 2, 5, 3].map(function (c) {
-      var n = info.buckets[c].length;
-      var pct = Math.round(n / info.totalScanned * 100);
-      return '<span style="flex:1;height:14px;border-radius:3px;background:' + CATEGORY[c].barBg + ';'
-           + 'display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff;font-weight:700;opacity:.9;">'
-           + (n > 0 ? n : '') + '</span>';
-    }).join('');
-    html += distBar + '</div>';
-    /* 每行 */
-    for (var si = 0; si < shinyRows.length; si++) {
-      html += renderRow(shinyRows[si]);
+  if (pick) {
+    var st = Math.max(0, pick.row.k - laid);
+    var when = st === 0 ? '下一颗' : '再过 ' + st + ' 颗';
+    var etaTxt = pick.row.etaMs > 0 ? ' · 约 ' + fmtDur(pick.row.etaMs) : '';
+    var who = pick.row.parent
+      ? ((pick.row.parent.shiny ? '✦ ' : '') + pick.row.parent.slot + '号位 ' + dexName(pick.row.parent.id))
+      : '无亲代';
+    html += '<div class="pcg-next-egg c2">';
+    html += '<h3>✦ ' + when + etaTxt + '</h3>';
+    html += '<span class="pcg-next-cat">' + pick.cat + '</span>';
+    html += '<div style="margin-top:6px;font-size:11.5px;color:inherit;opacity:.85;">' + who + ' · k=' + pick.row.k + '</div>';
+    html += '</div>';
+    /* 后续命中，简要列 4 行 */
+    var rest = hits.slice(1, 5);
+    for (var ri = 0; ri < rest.length; ri++) {
+      var it = rest[ri].row;
+      var st2 = Math.max(0, it.k - laid);
+      var who2 = it.parent
+        ? ((it.parent.shiny ? '✦ ' : '') + it.parent.slot + '号位 ' + dexName(it.parent.id))
+        : '无亲代';
+      html += '<div class="pcg-row"><div><span class="pcg-k">再过 ' + st2 + ' 颗 · k=' + it.k + '</span>' +
+        '<span class="pcg-parent-badge">' + who2 + '</span>' + catTag(rest[ri].cat) + '</div></div>';
     }
+  } else if (nx && nx.plainShiny) {
+    html += '<div class="pcg-next-egg c2"><h3>✦ 下一颗即闪</h3><span class="pcg-next-cat">本颗即闪</span>' +
+      '<div style="margin-top:6px;font-size:11.5px;color:inherit;opacity:.85;">' +
+      (nx.parent ? ((nx.parent.shiny ? '✦ ' : '') + nx.parent.slot + '号位 ' + dexName(nx.parent.id)) : '无亲代') +
+      ' · k=' + nx.k + '</div></div>';
   } else {
-    html += '<div class="pcg-empty">窗口内未命中任何闪光（裸闪或吃果闪）</div>';
+    html += '<div class="pcg-empty">扫描范围内暂无命中</div>';
+  }
+
+  /* 下一颗蛋状态 + 元信息（原版 popup meta 行同款） */
+  if (nx) {
+    var stTxt;
+    if (nx.plainShiny) stTxt = '<span class="pcg-shiny-badge">🌟 本颗即闪</span>';
+    else if (info.bx && nx.bxShiny) stTxt = '<span class="pcg-shiny-badge">🫐 已喂果，这颗会闪</span>';
+    else if (nx.bxShiny) stTxt = '<span class="pcg-tag t-f">🫐 喂果才闪</span>';
+    else stTxt = '<span style="opacity:.6">不闪</span>';
+    var bits = [];
+    bits.push('下一颗 k=' + nx.k + ' roll=' + (nx.roll < 0.01 ? nx.roll.toFixed(5) : nx.roll.toFixed(4)));
+    bits.push(info.hasDitto === false ? '⚠ 无百变怪' : '0号位 百变怪 ✓');
+    if (info.bx) bits.push('已吃果 ×2');
+    if (info.poolShiny > 0) bits.push('亲代池含 ' + info.poolShiny + ' 闪');
+    html += '<div class="pcg-row" style="margin-top:8px"><div><span class="pcg-k">' + bits.join(' · ') + '</span> ' + stTxt + '</div></div>';
   }
   html += '</div>';
 
-  /* ---- 卡片 B：全量蛋（cat 1/2/3/4/5，按 k 顺序） ---- */
-  var allRows = info.rows;  // 已经按 k 排好序
-  html += '<div class="pcg-sec" style="background:#f8fafc;border-color:#e2e8f0;">';
-  html += '<div class="pcg-sec-title"><span>🥚 全量蛋（近 ' + info.days + ' 天）</span>';
-  html += '<span class="pcg-cat-count">' + allRows.length + ' 颗</span></div>';
+  /* ---- 块二：蛋列表（窗口扫描，报数拆裸闪 / 吃果两口径） ---- */
+  var bare = win.buckets[2].length + win.buckets[4].length;
+  var berry = win.buckets[3].length + win.buckets[5].length;
+  html += '<div class="pcg-sec">';
+  html += '<div class="pcg-sec-title"><span>🥚 蛋列表（近 ' + win.days + ' 天）</span>';
+  html += '<span class="pcg-cat-count">裸闪 ' + bare + ' · 吃果 ' + berry + '</span></div>';
 
   /* 全量分布条 */
-  html += '<div style="display:flex;gap:3px;margin:4px 0 8px;">';
+  html += '<div class="pcg-dist-bar">';
   var allDist = [1, 2, 3, 4, 5].map(function (c) {
-    var n = info.buckets[c].length;
-    return '<span style="flex:1;height:14px;border-radius:3px;'
-         + (c === 1 ? 'background:#cbd5e1;' : 'background:' + CATEGORY[c].barBg + ';')
-         + 'display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff;font-weight:700;opacity:.9;"'
-         + 'title="' + CATEGORY[c].name + '：' + n + '">';
+    var n = win.buckets[c].length;
+    var isGrey = c === 1;
+    return '<span class="pcg-dist-seg pcg-dist-c' + c + '"'
+         + ' title="' + CATEGORY[c].name + '：' + n + '">' + (n > 0 ? n : '') + '</span>';
   }).join('');
   html += allDist + '</div>';
 
-  for (var ai = 0; ai < allRows.length; ai++) {
-    html += renderRow(allRows[ai]);
+  /* 明细：最近 30 颗 */
+  var showRows = win.rows.slice(0, 30);
+  for (var ai = 0; ai < showRows.length; ai++) {
+    html += renderRow(showRows[ai]);
   }
+  html += '<div class="pcg-empty">统计为近 ' + win.days + ' 天全部 ' + win.totalScanned + ' 颗 · 吃果类需喂靛莓果才成立</div>';
   html += '</div>';
 
   /* ---- 亲代池概览 ---- */
-  html += '<div class="pcg-sec" style="background:#f8fafc;border-color:#e2e8f0;">';
-  html += '<div class="pcg-sec-title"><span>🐣 亲代池 (' + info.poolSize + ' 只)</span></div>';
-  if (info.pool.length) {
-    html += '<div style="display:flex;flex-wrap:wrap;gap:4px;">';
-    for (var pi = 0; pi < info.pool.length; pi++) {
-      var pp = info.pool[pi];
+  html += '<div class="pcg-sec">';
+  html += '<div class="pcg-sec-title"><span>🐣 亲代池 (' + win.poolSize + ' 只)</span></div>';
+  if (win.pool.length) {
+    html += '<div class="pcg-prog-list">';
+    for (var pi = 0; pi < win.pool.length; pi++) {
+      var pp = win.pool[pi];
       var isShiny = pp.shiny;
-      html += '<span style="font-size:11px;padding:2px 6px;border-radius:4px;font-weight:500;'
-            + 'background:' + (isShiny ? '#ffedd5' : '#fef3c7') + ';color:' + (isShiny ? '#9a3412' : '#92400e') + ';'
-            + 'border:1px solid ' + (isShiny ? '#fdba74' : '#fcd34d') + ';">';
-      html += (isShiny ? '✦ ' : '') + dexName(pp.id);
-      html += '</span>';
+      html += '<span class="pcg-prog' + (isShiny ? ' pcg-prog-shiny' : '') + '">'
+            + (isShiny ? '✦ ' : '') + dexName(pp.id) + '</span>';
     }
     html += '</div>';
-    if (info.poolShiny > 0) html += '<div class="pcg-empty" style="color:#9a3412;margin-top:4px;">⚠️ 含 ' + info.poolShiny + ' 只闪光亲代，阈值升为 1/16 档</div>';
+    if (win.poolShiny > 0) html += '<div class="pcg-empty pcg-warn">⚠️ 含 ' + win.poolShiny + ' 只闪光亲代，阈值升为 1/16 档</div>';
   } else {
     html += '<div class="pcg-empty">没有可繁殖亲代（百变怪不算）</div>';
   }
   html += '</div>';
 
   body.innerHTML = html;
-  footer.textContent = 'laid=' + info.laid + ' · 近' + info.days + '天扫' + info.totalScanned + '颗 · 命中' + shinyRows.length;
+  footer.textContent = 'laid=' + info.laid + ' · 近' + win.days + '天：裸闪 ' + bare + ' / 吃果 ' + berry + ' · 明细30颗';
 }
 
 /* ---------- 启动 ---------- */
