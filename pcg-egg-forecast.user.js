@@ -507,46 +507,28 @@ function createPanel() {
   orb.innerHTML = '✦';
   document.documentElement.appendChild(orb);
 
-  /* 默认收起（悬浮球显示 / 面板隐藏） */
-  var folded = storeGet('folded');
-  if (folded !== false) { folded = true; }  // 默认收起
-  applyFold(folded);
+  /* 默认收起（悬浮球显示 / 面板隐藏）—— 不记忆，每次刷新都还原 */
+  applyFold(true);
 
-  /* 主题 */
+  /* 主题（唯一记忆的配置） */
   var theme = storeGet('theme');
   if (!theme) theme = (matchMedia && matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
   if (theme === 'dark') { el.classList.add('pcg-dark'); orb.classList.add('pcg-dark'); }
 
-  /* 位置（面板 + 悬浮球各自独立存位置） */
-  var pos = storeGet('pos');
-  if (pos && typeof pos.left === 'number') {
-    el.style.left = pos.left + 'px';
-    el.style.top = pos.top + 'px';
-    el.style.right = 'auto';
-  }
-  var orbPos = storeGet('orbPos');
-  if (orbPos && typeof orbPos.left === 'number') {
-    orb.style.left = orbPos.left + 'px';
-    orb.style.top = orbPos.top + 'px';
-    orb.style.right = 'auto';
-  } else {
-    /* 默认悬浮球靠右上 */
-    orb.style.right = '20px';
-    orb.style.top = '20px';
-  }
+  /* 默认位置：面板右中上；悬浮球窗口最右侧垂直居中 —— 不记忆 */
+  el.style.right = '16px';
+  el.style.top = '80px';
+  orb.style.right = '16px';
+  orb.style.top = '50%';
+  orb.style.marginTop = '-22px';   /* 44px 高的一半，居中修正 */
 
-  /* 事件：折叠按钮 ↔ 悬浮球 */
+  /* 事件：折叠按钮 ↔ 悬浮球（不用 click，用 mousedown/up 区分拖动 vs 点击） */
   el.querySelector('#pcg-efh-fold').addEventListener('click', function () {
-    applyFold(true);  // 点最小化 → 收起出球
-  });
-  orb.addEventListener('click', function (e) {
-    if (e.target.tagName === 'BUTTON') return;
-    applyFold(false);  // 点悬浮球 → 展开面板
+    applyFold(true);
   });
   function applyFold(isFolded) {
     el.classList.toggle('folded', isFolded);
     orb.style.display = isFolded ? 'flex' : 'none';
-    storeSet('folded', isFolded);
   }
 
   /* 主题切换 */
@@ -579,48 +561,43 @@ function createPanel() {
       el.style.right = 'auto';
     });
     document.addEventListener('mouseup', function () {
-      if (dragging) {
-        dragging = false;
-        el.classList.remove('dragging');
-        storeSet('pos', { left: parseInt(el.style.left), top: parseInt(el.style.top) });
-      }
+      if (dragging) { dragging = false; el.classList.remove('dragging'); }
     });
   })();
 
-  /* 悬浮球拖动 */
-  (function dragOrb() {
-    var offX = 0, offY = 0, dragging = false;
+  /* 悬浮球：mousedown → 记起点；mousemove → 拖动；mouseup → 判断拖动或点击（不用 click 事件） */
+  (function orbHit() {
+    var startX = 0, startY = 0, dragging = false, moved = false;
+    var THRESHOLD = 4;   /* 位移 < 4px 算点击，≥ 算拖动 */
+
     orb.addEventListener('mousedown', function (e) {
-      dragging = true;
+      dragging = true; moved = false;
       orb.classList.add('dragging');
-      var rect = orb.getBoundingClientRect();
-      offX = e.clientX - rect.left;
-      offY = e.clientY - rect.top;
+      startX = e.clientX; startY = e.clientY;
       e.preventDefault();
       e.stopPropagation();
     });
     document.addEventListener('mousemove', function (e) {
       if (!dragging) return;
-      var ow = 44, oh = 44;
-      var x = Math.max(4, Math.min(window.innerWidth - ow - 4, e.clientX - offX));
-      var y = Math.max(4, Math.min(window.innerHeight - oh - 4, e.clientY - offY));
-      orb.style.left = x + 'px';
-      orb.style.top = y + 'px';
-      orb.style.right = 'auto';
-    });
-    document.addEventListener('mouseup', function () {
-      if (dragging) {
-        dragging = false;
-        orb.classList.remove('dragging');
-        storeSet('orbPos', { left: parseInt(orb.style.left), top: parseInt(orb.style.top) });
+      var dx = e.clientX - startX, dy = e.clientY - startY;
+      if (!moved && Math.abs(dx) + Math.abs(dy) > THRESHOLD) moved = true;
+      if (moved) {
+        orb.style.left = (startX + dx - 22) + 'px';
+        orb.style.top  = (startY + dy - 22) + 'px';
+        orb.style.right = 'auto';
       }
     });
-    /* 拖动结束后点击仍会触发展开，加个判断：移动过就不展开 */
-    var moved = false;
-    orb.addEventListener('mousedown', function () { moved = false; });
-    document.addEventListener('mousemove', function () { if (dragging) moved = true; });
-    orb.addEventListener('click', function (e) {
-      if (moved) { e.preventDefault(); e.stopPropagation(); return; }
+    document.addEventListener('mouseup', function (e) {
+      if (!dragging) return;
+      dragging = false;
+      orb.classList.remove('dragging');
+      if (!moved) {
+        /* 没移动 → 算点击 → 展开面板 */
+        applyFold(false);
+      }
+      /* 移动过 → 纯拖动，位置也不记忆，刷新后回默认 */
+      e.preventDefault();
+      e.stopPropagation();
     });
   })();
 
