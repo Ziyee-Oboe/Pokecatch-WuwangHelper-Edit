@@ -2,7 +2,7 @@
 // @name         Poke'Catch 闪光蛋预测面板
 // @name:en     Poke'Catch Shiny Egg Forecast
 // @namespace    pcg-egg-forecast
-// @version      0.1.0
+// @version      0.1.1
 // @description  纯计算，零网络请求。读取游戏存档的 trainerSeed + pension.laid，用游戏同款 53 位确定性哈希预测未来每颗蛋是否闪光、roll 值、亲代抽取、多久后是闪。
 // @match        *://pokecatch-online.netlify.app/*
 // @run-at       document-idle
@@ -38,6 +38,21 @@ var K = {
   SHINY_PARENT_RATE_OLD: 0.1,     // sp:1 旧档，10%
   SHINY_BERRY_MULT: 2,            // bx 吃靛莓果 ×2
   NO_EGG: [137, 442, 479, 47901, 47902, 47903, 47904, 47905, 556]
+};
+
+/* ---------- 五种蛋分类样式表 ----------
+ * 颜色设计思路：
+ *   - 裸闪（2、4）用温暖金/橙色渐变，"天生闪光"感
+ *   - 吃果闪（3、5）用冷色蓝/紫，"靛莓果魔力"感，附加 🫐 标记
+ *   - 闪光亲代（4、5）颜色饱和度更高，因为亲代池里有闪更难得
+ *   - 普通（1）用中性灰，不强调
+ */
+var CATEGORY = {
+  1: { key: 'normal',        name: '普通',               emoji: '🥚', barBg: '#cbd5e1', barDarkBg: '#475569', text: '#64748b', textDark: '#94a3b8', badge: null, berry: false,  shiny: false },
+  2: { key: 'plain-shiny',   name: '普通亲代裸闪',       emoji: '🌟', barBg: 'linear-gradient(90deg,#fbbf24,#f59e0b)', secBg: '#fef3c7', secBgDark: '#451a03', text: '#92400e', textDark: '#fcd34d', badge: '✨ 裸闪',    berry: false,  shiny: false },
+  3: { key: 'plain-berry',   name: '普通亲代吃果',       emoji: '🫐', barBg: 'linear-gradient(90deg,#818cf8,#6366f1)', secBg: '#e0e7ff', secBgDark: '#312e81', text: '#3730a3', textDark: '#a5b4fc', badge: '🫐 吃果',    berry: true,   shiny: false },
+  4: { key: 'shiny-shiny',   name: '闪光亲代裸闪',       emoji: '✨', barBg: 'linear-gradient(90deg,#fb923c,#ea580c)', secBg: '#ffedd5', secBgDark: '#431407', text: '#9a3412', textDark: '#fdba74', badge: '✦ 亲代闪',   berry: false,  shiny: true  },
+  5: { key: 'shiny-berry',   name: '闪光亲代吃果',       emoji: '💎', barBg: 'linear-gradient(90deg,#c084fc,#9333ea)', secBg: '#f3e8ff', secBgDark: '#3b0764', text: '#6b21a8', textDark: '#d8b4fe', badge: '✦🫐 亲代吃果', berry: true,   shiny: true  }
 };
 
 /* ---------- 工具 ---------- */
@@ -98,7 +113,7 @@ function eggIsShiny(e, save) {
   if (Object.prototype.hasOwnProperty.call(e, 'shiny')) return !!e.shiny;  // 旧存档
   var threshold = shinyThreshold(e);
   var roll;
-  if (typeof e.k === 'number' && Math.floor(e.k) === e.k) {
+  if (typeof e.k === 'number' && isFinite(e.k) && Math.floor(e.k) === e.k) {
     roll = eggKHash(e.k, save);  // 新蛋
   } else {
     var key = String(e.uid != null ? e.uid : (e.laidAt != null ? e.laidAt : ''));
@@ -219,6 +234,27 @@ function nextShinyInfo(save) {
       return out;
     }
 
+    /* 吃果才会闪（原版 flipList：逐颗按抽到的亲代是否闪光定阈值，roll 落在 [th, th×2)） */
+    var flipList = (function () {
+      var out = [];
+      var max = 2000;
+      var N = pool.length;
+      for (var i = 0; i < max && out.length < 20; i++) {
+        var k = laid + i;
+        var th = base;
+        var par = null;
+        if (N) {
+          var idx = Math.floor(eggHash(trainerSeed(save) + '|egg|' + k + '|1') * N);
+          par = pool[idx] || null;
+          if (par && par.shiny) th = Math.max(parentRate, base);
+        }
+        var r0 = eggKHash(k, save);
+        if (r0 >= th && r0 < th * mult) {
+          out.push({ step: i, k: k, etaMs: eta(i), threshold: th, parent: par ? { id: par.id, shiny: par.shiny, slot: par.slot } : null });
+        }
+      }
+      return out;
+    })();
     var flipShinyList = scanFlip(Math.max(parentRate, base), 10);
     var flipPlainList = scanFlip(base, 10);
     var poolList = scanPool(10, 20000);
@@ -230,7 +266,7 @@ function nextShinyInfo(save) {
       laid: laid, bx: bxNext, poolSize: pool.length, poolShiny: pool.filter(function (p) { return p.shiny; }).length,
       pool: pool, hasDitto: hasDitto, next: nextInfo,
       shinyList: shinyList, plainList: plainList,
-      poolList: poolList, flipList: flipPlainList, flipShinyList: flipShinyList,
+      poolList: poolList, flipList: flipList, flipShinyList: flipShinyList, flipPlainList: flipPlainList,
       berryPoolList: berryPoolList,
       shiny: shinyList[0] || null, plain: plainList[0] || null, poolFirst: poolList[0] || null
     };
@@ -266,7 +302,7 @@ function storeSet(key, val) {
 
 /* ---------- 样式 ---------- */
 GM_addStyle([
-  '#pcg-efh { position: fixed; top: 80px; right: 16px; width: 320px; max-height: 85vh;',
+  '#pcg-efh { position: fixed; top: 80px; right: 16px; width: 340px; max-height: 85vh;',
   '  overflow: hidden; border-radius: 10px; background: #fff; box-shadow: 0 4px 18px rgba(0,0,0,.15);',
   '  font-size: 12.5px; font-family: -apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;',
   '  color: #1b1f24; z-index: 99999; display: flex; flex-direction: column; }',
@@ -282,38 +318,74 @@ GM_addStyle([
   '#pcg-efh.pcg-dark .pcg-head button:hover { background: rgba(255,255,255,.1); }',
   '#pcg-efh .pcg-body { padding: 10px; overflow-y: auto; flex: 1; }',
   '#pcg-efh .pcg-body.folded { display: none; }',
-  '#pcg-efh .pcg-sec { margin-bottom: 12px; }',
-  '#pcg-efh .pcg-sec-title { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;',
-  '  color: #5a616b; margin-bottom: 6px; }',
-  '#pcg-efh.pcg-dark .pcg-sec-title { color: #9aa3af; }',
-  '#pcg-efh .pcg-row { display: flex; justify-content: space-between; align-items: baseline; padding: 3px 0;',
-  '  border-bottom: 1px dashed #e4e6ea; }',
-  '#pcg-efh.pcg-dark .pcg-row { border-color: #2a2f38; }',
-  '#pcg-efh .pcg-row:last-child { border-bottom: none; }',
-  '#pcg-efh .pcg-k { font-family: "SF Mono",Menlo,Consolas,monospace; font-size: 11px; color: #5a616b; }',
+  '#pcg-efh .pcg-sec { margin-bottom: 12px; padding: 8px; border-radius: 8px; background: #f8fafc; border: 1px solid #e2e8f0; }',
+  '#pcg-efh.pcg-dark .pcg-sec { background: #1c2128; border-color: #2a2f38; }',
+  '#pcg-efh .pcg-sec.c2 { background: #fef9c3; border-color: #fde68a; }',
+  '#pcg-efh.pcg-dark .pcg-sec.c2 { background: #422006; border-color: #92400e; }',
+  '#pcg-efh .pcg-sec.c3 { background: #eef2ff; border-color: #c7d2fe; }',
+  '#pcg-efh.pcg-dark .pcg-sec.c3 { background: #1e1b4b; border-color: #3730a3; }',
+  '#pcg-efh .pcg-sec.c4 { background: #fff7ed; border-color: #fed7aa; }',
+  '#pcg-efh.pcg-dark .pcg-sec.c4 { background: #431407; border-color: #9a3412; }',
+  '#pcg-efh .pcg-sec.c5 { background: #faf5ff; border-color: #e9d5ff; }',
+  '#pcg-efh.pcg-dark .pcg-sec.c5 { background: #3b0764; border-color: #6b21a8; }',
+  '#pcg-efh .pcg-sec-title { font-size: 12px; font-weight: 700; letter-spacing: .04em; margin-bottom: 6px;',
+  '  display: flex; align-items: center; gap: 6px; }',
+  '#pcg-efh .pcg-sec-title .pcg-cat-count { font-size: 10.5px; padding: 1px 6px; border-radius: 10px; background: rgba(0,0,0,.08); color: inherit; }',
+  '#pcg-efh.pcg-dark .pcg-sec-title .pcg-cat-count { background: rgba(255,255,255,.12); }',
+  '#pcg-efh .pcg-row { display: flex; justify-content: space-between; align-items: baseline; padding: 4px 6px; margin-bottom: 3px;',
+  '  border-radius: 6px; background: rgba(255,255,255,.5); border: 1px solid transparent; transition: all .15s; }',
+  '#pcg-efh.pcg-dark .pcg-row { background: rgba(255,255,255,.04); }',
+  '#pcg-efh .pcg-row.c2 { background: linear-gradient(90deg,#fffbeb,#fef3c7); border-color: #fde68a; }',
+  '#pcg-efh.pcg-dark .pcg-row.c2 { background: linear-gradient(90deg,#422006,#78350f); border-color: #92400e; }',
+  '#pcg-efh .pcg-row.c3 { background: linear-gradient(90deg,#eef2ff,#e0e7ff); border-color: #c7d2fe; }',
+  '#pcg-efh.pcg-dark .pcg-row.c3 { background: linear-gradient(90deg,#1e1b4b,#312e81); border-color: #3730a3; }',
+  '#pcg-efh .pcg-row.c4 { background: linear-gradient(90deg,#fff7ed,#ffedd5); border-color: #fed7aa; }',
+  '#pcg-efh.pcg-dark .pcg-row.c4 { background: linear-gradient(90deg,#431407,#7c2d12); border-color: #9a3412; }',
+  '#pcg-efh .pcg-row.c5 { background: linear-gradient(90deg,#faf5ff,#f3e8ff); border-color: #e9d5ff; }',
+  '#pcg-efh.pcg-dark .pcg-row.c5 { background: linear-gradient(90deg,#3b0764,#581c87); border-color: #6b21a8; }',
+  '#pcg-efh .pcg-k { font-family: "SF Mono",Menlo,Consolas,monospace; font-size: 11px; color: #5a616b; font-weight: 500; }',
   '#pcg-efh.pcg-dark .pcg-k { color: #9aa3af; }',
-  '#pcg-efh .pcg-val { font-variant-numeric: tabular-nums; }',
-  '#pcg-efh .pcg-shiny-badge { display: inline-block; padding: 0 5px; border-radius: 4px; background: linear-gradient(135deg,#fef3c7,#fde68a);',
-  '  color: #92400e; font-size: 11px; font-weight: 600; margin-left: 4px; }',
-  '#pcg-efh.pcg-dark .pcg-shiny-badge { background: linear-gradient(135deg,#78350f,#92400e); color: #fde68a; }',
-  '#pcg-efh .pcg-parent-badge { font-size: 11px; padding: 0 4px; border-radius: 3px; background: #e0f2fe; color: #075985; margin-left: 4px; }',
-  '#pcg-efh.pcg-dark .pcg-parent-badge { background: #0c4a6e; color: #7dd3fc; }',
-  '#pcg-efh .pcg-bar { height: 4px; background: #e4e6ea; border-radius: 2px; overflow: hidden; margin-top: 2px; }',
+  '#pcg-efh .pcg-val { font-variant-numeric: tabular-nums; font-weight: 600; }',
+  '#pcg-efh .pcg-bar { height: 5px; background: #e4e6ea; border-radius: 3px; overflow: hidden; margin-top: 3px; }',
   '#pcg-efh.pcg-dark .pcg-bar { background: #2a2f38; }',
-  '#pcg-efh .pcg-bar > div { height: 100%; background: #2563eb; border-radius: 2px; transition: width .3s; }',
-  '#pcg-efh .pcg-bar.pcg-shiny > div { background: #f59e0b; }',
+  '#pcg-efh .pcg-bar > div { height: 100%; border-radius: 3px; transition: width .3s; }',
+  '#pcg-efh .pcg-row.c2 .pcg-bar > div { background: linear-gradient(90deg,#fbbf24,#f59e0b); }',
+  '#pcg-efh .pcg-row.c3 .pcg-bar > div { background: linear-gradient(90deg,#818cf8,#6366f1); }',
+  '#pcg-efh .pcg-row.c4 .pcg-bar > div { background: linear-gradient(90deg,#fb923c,#ea580c); box-shadow: 0 0 8px rgba(249,115,22,.4); }',
+  '#pcg-efh .pcg-row.c5 .pcg-bar > div { background: linear-gradient(90deg,#c084fc,#9333ea); box-shadow: 0 0 8px rgba(168,85,247,.4); }',
+  '#pcg-efh .pcg-row.c1 .pcg-bar > div { background: #cbd5e1; }',
+  '#pcg-efh .pcg-parent-badge { font-size: 11px; padding: 0 4px; border-radius: 3px; background: rgba(255,255,255,.7); color: #0369a1; margin-left: 4px; border: 1px solid #bae6fd; }',
+  '#pcg-efh.pcg-dark .pcg-parent-badge { background: rgba(56,189,248,.15); color: #7dd3fc; border-color: #0c4a6e; }',
+  '#pcg-efh .pcg-cat-badge { font-size: 10px; padding: 1px 5px; border-radius: 3px; margin-left: 6px; font-weight: 600; letter-spacing: .02em; }',
+  '#pcg-efh .pcg-row.c2 .pcg-cat-badge { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }',
+  '#pcg-efh.pcg-dark .pcg-row.c2 .pcg-cat-badge { background: rgba(245,158,11,.15); color: #fcd34d; border-color: #92400e; }',
+  '#pcg-efh .pcg-row.c3 .pcg-cat-badge { background: #e0e7ff; color: #3730a3; border: 1px solid #a5b4fc; }',
+  '#pcg-efh.pcg-dark .pcg-row.c3 .pcg-cat-badge { background: rgba(99,102,241,.15); color: #a5b4fc; border-color: #3730a3; }',
+  '#pcg-efh .pcg-row.c4 .pcg-cat-badge { background: #ffedd5; color: #9a3412; border: 1px solid #fdba74; }',
+  '#pcg-efh.pcg-dark .pcg-row.c4 .pcg-cat-badge { background: rgba(234,88,12,.15); color: #fdba74; border-color: #9a3412; }',
+  '#pcg-efh .pcg-row.c5 .pcg-cat-badge { background: #f3e8ff; color: #6b21a8; border: 1px solid #d8b4fe; }',
+  '#pcg-efh.pcg-dark .pcg-row.c5 .pcg-cat-badge { background: rgba(147,51,234,.15); color: #d8b4fe; border-color: #6b21a8; }',
   '#pcg-efh .pcg-footer { padding: 6px 10px; border-top: 1px solid #e4e6ea; font-size: 11px; color: #5a616b;',
-  '  display: flex; justify-content: space-between; gap: 8px; }',
-  '#pcg-efh.pcg-dark .pcg-footer { border-color: #2a2f38; color: #9aa3af; }',
+  '  display: flex; justify-content: space-between; gap: 8px; background: #fafbfc; }',
+  '#pcg-efh.pcg-dark .pcg-footer { border-color: #2a2f38; color: #9aa3af; background: #0f1216; }',
   '#pcg-efh .pcg-footer button { background: transparent; border: none; cursor: pointer; color: inherit; font-size: 11px; }',
   '#pcg-efh .pcg-footer button:hover { text-decoration: underline; }',
-  '#pcg-efh .pcg-bx-note { font-size: 11px; color: #059669; margin-top: 6px; padding: 4px 6px;',
-  '  border-radius: 4px; background: rgba(5,150,105,.1); }',
-  '#pcg-efh.pcg-dark .pcg-bx-note { color: #34d399; background: rgba(52,211,153,.15); }',
   '#pcg-efh .pcg-empty { color: #9aa3af; font-size: 12px; padding: 8px 0; text-align: center; }',
   '#pcg-efh .pcg-err { color: #dc2626; font-size: 12px; padding: 8px 0; text-align: center; }',
-  '#pcg-efh .pcg-roll { font-family: "SF Mono",Menlo,Consolas,monospace; font-size: 10.5px; color: #5a616b; }',
-  '#pcg-efh.pcg-dark .pcg-roll { color: #9aa3af; }'
+  '#pcg-efh .pcg-roll { font-family: "SF Mono",Menlo,Consolas,monospace; font-size: 10.5px; color: #5a616b; opacity: .85; }',
+  '#pcg-efh.pcg-dark .pcg-roll { color: #9aa3af; }',
+  '#pcg-efh .pcg-next-egg { padding: 10px; border-radius: 8px; border: 2px dashed #cbd5e1; margin-bottom: 12px; text-align: center; }',
+  '#pcg-efh.pcg-dark .pcg-next-egg { border-color: #475569; }',
+  '#pcg-efh .pcg-next-egg.c2 { border-style: solid; border-color: #f59e0b; background: linear-gradient(135deg,#fffbeb,#fef3c7); }',
+  '#pcg-efh .pcg-next-egg.c3 { border-style: solid; border-color: #6366f1; background: linear-gradient(135deg,#eef2ff,#e0e7ff); }',
+  '#pcg-efh .pcg-next-egg.c4 { border-style: solid; border-color: #ea580c; background: linear-gradient(135deg,#fff7ed,#ffedd5); box-shadow: 0 0 12px rgba(249,115,22,.2); }',
+  '#pcg-efh .pcg-next-egg.c5 { border-style: solid; border-color: #9333ea; background: linear-gradient(135deg,#faf5ff,#f3e8ff); box-shadow: 0 0 12px rgba(168,85,247,.2); }',
+  '#pcg-efh .pcg-next-egg h3 { font-size: 14px; margin: 0 0 4px; font-weight: 800; }',
+  '#pcg-efh .pcg-next-egg .pcg-next-cat { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 700; margin-bottom: 4px; }',
+  '#pcg-efh .pcg-next-egg.c2 .pcg-next-cat { background: #f59e0b; color: #fff; }',
+  '#pcg-efh .pcg-next-egg.c3 .pcg-next-cat { background: #6366f1; color: #fff; }',
+  '#pcg-efh .pcg-next-egg.c4 .pcg-next-cat { background: #ea580c; color: #fff; }',
+  '#pcg-efh .pcg-next-egg.c5 .pcg-next-cat { background: #9333ea; color: #fff; }'
 ].join('\n'));
 
 /* ---------- 创建面板 ---------- */
@@ -406,23 +478,44 @@ function createPanel() {
   return el;
 }
 
-/* ---------- 渲染一行候选 ---------- */
-function renderRow(row, threshold, label) {
-  var rollStr = row.k != null ? 'k=' + row.k : '';
-  var rollVal = row.roll != null ? (row.roll < 0.001 ? row.roll.toFixed(4) : row.roll.toFixed(3)) : '';
-  var thStr = threshold != null ? ('<span class="pcg-roll">阈值 ' + (threshold < 0.001 ? threshold.toFixed(4) : threshold.toFixed(3)) + '</span>') : '';
+/* ---------- 给一颗蛋判定属于哪个分类（返回 cat 数字 1-5） ---------- */
+function classifyRow(row, base, parentRate, mult) {
+  var r = row.roll != null ? row.roll : (row.k != null ? eggKHash(row.k, _paintSave) : 0);
+  var hasShinyParent = row.parent && row.parent.shiny;
+  // 4/5 优先级最高：亲代是闪光的情况
+  if (hasShinyParent) {
+    if (r < Math.max(parentRate, base)) return 4;
+    if (r < Math.max(parentRate, base) * mult) return 5;
+  }
+  // 2/3：普通亲代
+  if (r < base) return 2;
+  if (r < base * mult) return 3;
+  return 1;
+}
+
+/* ---------- 渲染一行候选（带分类颜色） ---------- */
+var _paintSave = null;  // 让 classifyRow 在 renderRow 里能访问
+function renderRow(row, cat, base, parentRate, mult) {
+  var c = CATEGORY[cat] || CATEGORY[1];
+  var roll = row.roll != null ? row.roll : (row.k != null ? eggKHash(row.k, _paintSave) : 0);
+  var rollStr = roll < 0.01 ? roll.toFixed(5) : roll.toFixed(4);
+  var kStr = row.k != null ? 'k=' + row.k : '';
   var parentStr = row.parent
-    ? ('<span class="pcg-parent-badge" title="亲代">' + (row.parent.shiny ? '✦' : '') + dexName(row.parent.id) + '·槽' + row.parent.slot + '</span>')
+    ? ('<span class="pcg-parent-badge">' + (row.parent.shiny ? '✦' : '') + dexName(row.parent.id) + '·槽' + row.parent.slot + '</span>')
     : '';
-  var etaStr = row.etaMs != null && row.etaMs > 0 ? (' ' + fmtDur(row.etaMs)) : (row.step === 0 ? '（下一颗）' : '');
-  var pct = row.threshold ? Math.min(100, row.threshold * 500) : 50;  // 仅展示用
-  var shinyBar = label && label.indexOf('闪') >= 0 ? 'pcg-shiny' : '';
+  var etaStr = row.etaMs != null && row.etaMs > 0 ? fmtDur(row.etaMs) : (row.step === 0 ? '（下一颗）' : '');
+  var thNow = row.parent && row.parent.shiny ? Math.max(parentRate, base) : base;
+  var thStr = roll < thNow ? '裸闪阈值 ' + thNow.toFixed(4)
+              : roll < thNow * mult ? '吃果阈值 ' + (thNow * mult).toFixed(4)
+              : '';
+  var pct = Math.min(100, Math.max(15, roll * 500));
+  var badge = c.badge ? '<span class="pcg-cat-badge">' + c.badge + '</span>' : '';
   return '' +
-    '<div class="pcg-row">' +
+    '<div class="pcg-row c' + cat + '">' +
     '  <div>' +
-    '    <span class="pcg-k">#' + row.step + ' ' + rollStr + '</span>' + parentStr +
-    '    <div class="pcg-roll">' + rollStr + (rollVal ? ' roll=' + rollVal : '') + ' ' + thStr + '</div>' +
-    '    <div class="pcg-bar ' + shinyBar + '"><div style="width:' + pct + '%"></div></div>' +
+    '    <span class="pcg-k">#' + row.step + ' ' + kStr + '</span>' + parentStr + badge +
+    '    <div class="pcg-roll">roll=' + rollStr + (thStr ? ' · ' + thStr : '') + '</div>' +
+    '    <div class="pcg-bar"><div style="width:' + pct + '%"></div></div>' +
     '  </div>' +
     '  <div class="pcg-val">' + etaStr + '</div>' +
     '</div>';
@@ -442,72 +535,93 @@ function paint() {
     return;
   }
 
-  var pen = save.pension || {};
   var info = nextShinyInfo(save);
-
   if (!info) {
     body.innerHTML = '<div class="pcg-err">存档 pension 字段缺失</div>';
     footer.textContent = '存档不兼容';
     return;
   }
 
-  var html = '';
+  _paintSave = save;  // 让 classifyRow / renderRow 里的 eggKHash 能访问
+  var base = K.SHINY_RATE;
+  var parentRate = Math.max(info.poolShiny > 0 ? K.SHINY_PARENT_RATE : base, base);  // 实际用的闪亲阈值
+  var mult = 2;
 
-  /* 顶部：下一颗蛋 */
+  /* ---- 下一颗蛋大卡片 ---- */
   var ni = info.next;
-  var bxLabel = info.bx ? '<span class="pcg-shiny-badge">✨ 下一颗已喂靛莓果</span>' : '';
-  var rollCompare = ni.plainShiny
-    ? '<span class="pcg-shiny-badge">🌟 就是闪光！</span>'
-    : (ni.bxShiny ? '<span class="pcg-shiny-badge">🫐 吃果后闪光</span>' : '');
-  html += '<div class="pcg-sec"><div class="pcg-sec-title">下一颗蛋（k=' + ni.k + '）' + bxLabel + '</div>';
-  html += '<div class="pcg-row"><div><span class="pcg-k">roll ' + (ni.roll < 0.001 ? ni.roll.toFixed(5) : ni.roll.toFixed(4)) + '</span>';
-  html += '<span class="pcg-parent-badge">' + (ni.parent ? ((ni.parent.shiny ? '✦' : '') + dexName(ni.parent.id) + '·槽' + ni.parent.slot) : '无亲代') + '</span>';
-  html += rollCompare;
-  html += '</div><div class="pcg-val"><span class="pcg-roll">th=' + ni.threshold.toFixed(4) + '</span></div></div>';
-  if (info.poolShiny > 0) {
-    html += '<div class="pcg-bx-note">⚠️ 亲代池里有 ' + info.poolShiny + ' 只闪光，阈值走 1/16 档</div>';
+  var nextCat = ni.parent && ni.parent.shiny
+    ? (ni.plainShiny ? 4 : (ni.bxShiny ? 5 : 1))
+    : (ni.plainShiny ? 2 : (ni.bxShiny ? 3 : 1));
+  var nextC = CATEGORY[nextCat];
+  var cardNote = '';
+  if (nextCat >= 2 && info.bx) cardNote += '🫐 已喂靛莓果';
+  if (info.poolShiny > 0) cardNote += (cardNote ? ' · ' : '') + '亲代池含闪';
+
+  var html = '<div class="pcg-next-egg c' + nextCat + '">';
+  html += '<h3>' + nextC.emoji + ' 下一颗蛋 · k=' + ni.k + '</h3>';
+  html += '<span class="pcg-next-cat">' + nextC.name + '</span>';
+  html += '<div style="margin-top:6px;font-size:11.5px;color:inherit;opacity:.85;">';
+  html += 'roll=' + (ni.roll < 0.01 ? ni.roll.toFixed(5) : ni.roll.toFixed(4));
+  html += ' · ' + (ni.parent ? ((ni.parent.shiny ? '✦ ' : '') + dexName(ni.parent.id) + '·槽' + ni.parent.slot) : '无亲代');
+  html += '</div>';
+  if (cardNote) html += '<div style="margin-top:4px;font-size:11px;opacity:.75;">' + cardNote + '</div>';
+  html += '</div>';
+
+  /* ---- 四类候选 section ----
+   * 排序：c4 闪光亲代裸闪（最稀有）→ c2 普通亲代裸闪 → c5 闪光亲代吃果 → c3 普通亲代吃果
+   */
+  var sections = [
+    { cat: 4, list: info.shinyList, limit: 20000, label: null },
+    { cat: 2, list: info.plainList, limit: 50000, label: null },
+    { cat: 5, list: info.flipShinyList, limit: 20000, label: null },
+    { cat: 3, list: info.flipList, limit: 2000,  label: null }
+  ];
+
+  for (var si = 0; si < sections.length; si++) {
+    var sec = sections[si];
+    var c = CATEGORY[sec.cat];
+    var rows = sec.list || [];
+    html += '<div class="pcg-sec c' + sec.cat + '">';
+    html += '<div class="pcg-sec-title">';
+    html += '<span>' + c.emoji + ' ' + c.name + '</span>';
+    html += '<span class="pcg-cat-count">' + rows.length + '</span>';
+    html += '</div>';
+    if (rows.length) {
+      for (var ri = 0; ri < rows.length; ri++) {
+        html += renderRow(rows[ri], sec.cat, base, parentRate, mult);
+      }
+    } else {
+      html += '<div class="pcg-empty">' + sec.limit + ' 颗内未命中</div>';
+    }
+    html += '</div>';
+  }
+
+  /* ---- 亲代池概览 ---- */
+  html += '<div class="pcg-sec" style="background:#f8fafc;border-color:#e2e8f0;">';
+  html += '<div class="pcg-sec-title"><span>🐣 亲代池 (' + info.poolSize + ' 只)</span></div>';
+  if (info.pool.length) {
+    html += '<div style="display:flex;flex-wrap:wrap;gap:4px;">';
+    for (var pi = 0; pi < info.pool.length; pi++) {
+      var pp = info.pool[pi];
+      var isShiny = pp.shiny;
+      var cc = isShiny ? CATEGORY[4] : CATEGORY[2];
+      html += '<span style="font-size:11px;padding:2px 6px;border-radius:4px;font-weight:500;'
+            + 'background:' + (isShiny ? '#ffedd5' : '#fef3c7') + ';color:' + (isShiny ? '#9a3412' : '#92400e') + ';'
+            + 'border:1px solid ' + (isShiny ? '#fdba74' : '#fcd34d') + ';">';
+      html += (isShiny ? '✦ ' : '') + dexName(pp.id);
+      html += '</span>';
+    }
+    html += '</div>';
+    if (info.poolShiny > 0) html += '<div class="pcg-empty" style="color:#9a3412;margin-top:4px;">⚠️ 含 ' + info.poolShiny + ' 只闪光亲代，阈值升为 1/16 档</div>';
+  } else {
+    html += '<div class="pcg-empty">没有可繁殖亲代（百变怪不算）</div>';
   }
   html += '</div>';
 
-  /* 三类闪光候选 */
-  html += '<div class="pcg-sec"><div class="pcg-sec-title">🌟 闪光亲代能出 (' + info.shinyList.length + ')</div>';
-  if (info.shinyList.length) {
-    for (var i = 0; i < info.shinyList.length; i++) {
-      html += renderRow(info.shinyList[i], 1/16, 'shiny');
-    }
-  } else { html += '<div class="pcg-empty">50000 颗内未命中</div>'; }
-  html += '</div>';
-
-  html += '<div class="pcg-sec"><div class="pcg-sec-title">普通亲代能出 (' + info.plainList.length + ')</div>';
-  if (info.plainList.length) {
-    for (var j = 0; j < info.plainList.length; j++) {
-      html += renderRow(info.plainList[j], 1/512, 'plain');
-    }
-  } else { html += '<div class="pcg-empty">50000 颗内未命中</div>'; }
-  html += '</div>';
-
-  html += '<div class="pcg-sec"><div class="pcg-sec-title">🫐 吃果才会闪 (' + info.flipList.length + ')</div>';
-  if (info.flipList.length) {
-    for (var f = 0; f < info.flipList.length; f++) {
-      html += renderRow(info.flipList[f], info.flipList[f].threshold, 'flip');
-    }
-  } else { html += '<div class="pcg-empty">2000 颗内未命中</div>'; }
-  html += '</div>';
-
-  /* 亲代池概览 */
-  html += '<div class="pcg-sec"><div class="pcg-sec-title">亲代池 (' + info.poolSize + ' 只)</div>';
-  if (info.pool.length) {
-    html += '<div class="pcg-row"><div>';
-    for (var p = 0; p < info.pool.length; p++) {
-      var pp = info.pool[p];
-      html += '<span class="pcg-parent-badge" style="margin-right:4px">' + (pp.shiny ? '✦' : '') + dexName(pp.id) + '</span>';
-    }
-    html += '</div></div>';
-  } else { html += '<div class="pcg-empty">没有可繁殖亲代（百变怪不算）</div>'; }
-  html += '</div>';
-
   body.innerHTML = html;
-  footer.textContent = 'laid=' + info.laid + ' · 每秒刷新';
+  var shinyTotal = (info.shinyList.length + info.plainList.length);
+  var berryTotal = (info.flipShinyList.length + info.flipList.length);
+  footer.textContent = 'laid=' + info.laid + ' · 裸闪 ' + shinyTotal + ' · 吃果 ' + berryTotal;
 }
 
 /* ---------- 启动 ---------- */
