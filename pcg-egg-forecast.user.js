@@ -564,24 +564,19 @@ function createPanel() {
   return el;
 }
 
-/* ---------- 渲染一行候选（row.cat 已由 windowScan 判好） ---------- */
+/* ---------- 渲染一行（纯文字，无进度条无 roll） ---------- */
 function renderRow(row) {
   var cat = row.cat || 1;
   var c = CATEGORY[cat];
-  var roll = row.roll;
-  var rollStr = roll < 0.01 ? roll.toFixed(5) : roll.toFixed(4);
   var parentStr = row.parent
     ? ('<span class="pcg-parent-badge">' + (row.parent.shiny ? '✦' : '') + dexName(row.parent.id) + '·槽' + row.parent.slot + '</span>')
     : '';
   var etaStr = row.etaMs > 0 ? fmtDur(row.etaMs) : '（下一颗）';
-  var pct = Math.min(100, Math.max(12, roll * 500));
   var badge = c.badge ? '<span class="pcg-cat-badge">' + c.badge + '</span>' : '';
   return '' +
     '<div class="pcg-row c' + cat + '">' +
     '  <div>' +
     '    <span class="pcg-k">k=' + row.k + '</span>' + parentStr + badge +
-    '    <div class="pcg-roll">roll=' + rollStr + '</div>' +
-    '    <div class="pcg-bar"><div style="width:' + pct + '%"></div></div>' +
     '  </div>' +
     '  <div class="pcg-val">+' + row.step + ' · ' + etaStr + '</div>' +
     '</div>';
@@ -654,44 +649,61 @@ function paint() {
   var nx = info.next;
   var html = '';
 
-  /* ---- 块一：最近的闪（原版口径：三类清单合并取最近） ---- */
+  /* ---- 块一：亲代池（移到最前） ---- */
+  html += '<div class="pcg-sec">';
+  html += '<div class="pcg-sec-title"><span>亲代池 (' + win.poolSize + ' 只)</span></div>';
+  if (win.pool.length) {
+    html += '<div class="pcg-prog-list">';
+    for (var pi = 0; pi < win.pool.length; pi++) {
+      var pp = win.pool[pi];
+      var isShiny = pp.shiny;
+      html += '<span class="pcg-prog' + (isShiny ? ' pcg-prog-shiny' : '') + '">'
+            + (isShiny ? '✦ ' : '') + dexName(pp.id) + '</span>';
+    }
+    html += '</div>';
+  } else {
+    html += '<div class="pcg-empty">没有可繁殖亲代（百变怪不算）</div>';
+  }
+  /* 下一颗小卡片（和后续命中同 pcg-row 样式，追加在亲代池末尾） */
+  if (nx) {
+    var nxWho = nx.parent
+      ? ((nx.parent.shiny ? '✦ ' : '') + '槽' + nx.parent.slot + ' ' + dexName(nx.parent.id))
+      : '无亲代';
+    var nxCatText = CATEGORY[nx.cat] ? CATEGORY[nx.cat].name : '普通';
+    html += '<div class="pcg-row c' + nx.cat + '">';
+    html += '<div><span class="pcg-k">下一颗 · k=' + nx.k + '</span>';
+    html += '<span class="pcg-parent-badge">' + nxWho + '</span>';
+    if (CATEGORY[nx.cat] && CATEGORY[nx.cat].badge) {
+      html += '<span class="pcg-cat-badge">' + CATEGORY[nx.cat].badge + '</span>';
+    }
+    html += '</div><div class="pcg-val">(' + nxCatText + ')</div></div>';
+  }
+  html += '</div>';
+
+  /* ---- 块二：最近的闪（后续命中 + 元信息，不再有下一颗大卡片） ---- */
   var hits = mergeHits(info);
-  var pick = hits.length ? hits[0] : null;
   html += '<div class="pcg-sec"><div class="pcg-sec-title"><span>✦ 最近的闪</span></div>';
 
+  /* 后续命中（原版 cap 10/10/3 合并后按 k 升序取前 5） */
+  var pick = hits.length ? hits[0] : null;
   if (pick) {
-    var st = Math.max(0, pick.row.k - laid);
-    var when = st === 0 ? '下一颗' : '再过 ' + st + ' 颗';
-    var etaTxt = pick.row.etaMs > 0 ? ' · 约 ' + fmtDur(pick.row.etaMs) : '';
-    var who = pick.row.parent
-      ? ((pick.row.parent.shiny ? '✦ ' : '') + pick.row.parent.slot + '号位 ' + dexName(pick.row.parent.id))
-      : '无亲代';
-    html += '<div class="pcg-next-egg c2">';
-    html += '<h3>✦ ' + when + etaTxt + '</h3>';
-    html += '<span class="pcg-next-cat">' + pick.cat + '</span>';
-    html += '<div style="margin-top:6px;font-size:11.5px;color:inherit;opacity:.85;">' + who + ' · k=' + pick.row.k + '</div>';
-    html += '</div>';
-    /* 后续命中，简要列 4 行 */
-    var rest = hits.slice(1, 5);
+    var rest = hits.slice(0, 5);
     for (var ri = 0; ri < rest.length; ri++) {
       var it = rest[ri].row;
       var st2 = Math.max(0, it.k - laid);
       var who2 = it.parent
-        ? ((it.parent.shiny ? '✦ ' : '') + it.parent.slot + '号位 ' + dexName(it.parent.id))
+        ? ((it.parent.shiny ? '✦ ' : '') + '槽' + it.parent.slot + ' ' + dexName(it.parent.id))
         : '无亲代';
-      html += '<div class="pcg-row"><div><span class="pcg-k">再过 ' + st2 + ' 颗 · k=' + it.k + '</span>' +
-        '<span class="pcg-parent-badge">' + who2 + '</span>' + catTag(rest[ri].cat) + '</div></div>';
+      var prefix = st2 === 0 ? '下一颗' : '再过 ' + st2 + ' 颗';
+      html += '<div class="pcg-row c4"><div><span class="pcg-k">' + prefix + ' · k=' + it.k + '</span>' +
+        '<span class="pcg-parent-badge">' + who2 + '</span>' + catTag(rest[ri].cat) + '</div>' +
+        '<div class="pcg-val">' + (it.etaMs > 0 ? fmtDur(it.etaMs) : '—') + '</div></div>';
     }
-  } else if (nx && nx.plainShiny) {
-    html += '<div class="pcg-next-egg c2"><h3>✦ 下一颗即闪</h3><span class="pcg-next-cat">本颗即闪</span>' +
-      '<div style="margin-top:6px;font-size:11.5px;color:inherit;opacity:.85;">' +
-      (nx.parent ? ((nx.parent.shiny ? '✦ ' : '') + nx.parent.slot + '号位 ' + dexName(nx.parent.id)) : '无亲代') +
-      ' · k=' + nx.k + '</div></div>';
   } else {
     html += '<div class="pcg-empty">扫描范围内暂无命中</div>';
   }
 
-  /* 下一颗蛋状态 + 元信息（原版 popup meta 行同款） */
+  /* 元信息行（去掉 roll 显示） */
   if (nx) {
     var stTxt;
     if (nx.plainShiny) stTxt = '<span class="pcg-shiny-badge">✦ 本颗即闪</span>';
@@ -699,15 +711,15 @@ function paint() {
     else if (nx.bxShiny) stTxt = '<span class="pcg-tag t-f">✦ 喂果才闪</span>';
     else stTxt = '<span style="opacity:.6">不闪</span>';
     var bits = [];
-    bits.push('下一颗 k=' + nx.k + ' roll=' + (nx.roll < 0.01 ? nx.roll.toFixed(5) : nx.roll.toFixed(4)));
-    bits.push(info.hasDitto === false ? '⚠ 无百变怪' : '0号位 百变怪 ✓');
+    bits.push('百变怪 ' + (info.hasDitto === false ? '✗ 无' : '✓ 0号位'));
     if (info.bx) bits.push('已吃果 ×2');
     if (info.poolShiny > 0) bits.push('亲代池含 ' + info.poolShiny + ' 闪');
-    html += '<div class="pcg-row" style="margin-top:8px"><div><span class="pcg-k">' + bits.join(' · ') + '</span> ' + stTxt + '</div></div>';
+    html += '<div class="pcg-row" style="background:rgba(255,255,255,.3);"><div>' + bits.join(' · ') + '</div>' +
+      '<div>' + stTxt + '</div></div>';
   }
   html += '</div>';
 
-  /* ---- 块二：蛋列表（窗口扫描，报数拆裸闪 / 吃果两口径） ---- */
+  /* ---- 块三：蛋列表 ---- */
   var bare = win.buckets[2].length + win.buckets[4].length;
   var berry = win.buckets[3].length + win.buckets[5].length;
   html += '<div class="pcg-sec">';
@@ -718,36 +730,17 @@ function paint() {
   html += '<div class="pcg-dist-bar">';
   var allDist = [1, 2, 3, 4, 5].map(function (c) {
     var n = win.buckets[c].length;
-    var isGrey = c === 1;
     return '<span class="pcg-dist-seg pcg-dist-c' + c + '"'
          + ' title="' + CATEGORY[c].name + '：' + n + '">' + (n > 0 ? n : '') + '</span>';
   }).join('');
   html += allDist + '</div>';
 
-  /* 明细：最近 30 颗 */
+  /* 明细：最近 30 颗（renderRow 已简化为纯文字，无 bar 无 roll） */
   var showRows = win.rows.slice(0, 30);
   for (var ai = 0; ai < showRows.length; ai++) {
     html += renderRow(showRows[ai]);
   }
   html += '<div class="pcg-empty">统计为近 ' + win.days + ' 天全部 ' + win.totalScanned + ' 颗 · 吃果类需喂靛莓果才成立</div>';
-  html += '</div>';
-
-  /* ---- 亲代池概览 ---- */
-  html += '<div class="pcg-sec">';
-  html += '<div class="pcg-sec-title"><span>🐣 亲代池 (' + win.poolSize + ' 只)</span></div>';
-  if (win.pool.length) {
-    html += '<div class="pcg-prog-list">';
-    for (var pi = 0; pi < win.pool.length; pi++) {
-      var pp = win.pool[pi];
-      var isShiny = pp.shiny;
-      html += '<span class="pcg-prog' + (isShiny ? ' pcg-prog-shiny' : '') + '">'
-            + (isShiny ? '✦ ' : '') + dexName(pp.id) + '</span>';
-    }
-    html += '</div>';
-    if (win.poolShiny > 0) html += '<div class="pcg-empty pcg-warn">⚠️ 含 ' + win.poolShiny + ' 只闪光亲代，阈值升为 1/16 档</div>';
-  } else {
-    html += '<div class="pcg-empty">没有可繁殖亲代（百变怪不算）</div>';
-  }
   html += '</div>';
 
   body.innerHTML = html;
