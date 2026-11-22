@@ -605,16 +605,17 @@ function calcBoth(save) {
 /* ---------- 三类命中合并，按 k 升序（原版 popup 同款：限额 10/10/3） ---------- */
 function mergeHits(info, cap) {
   var groups = [
-    [info.shinyList, '闪光亲代'],
-    [info.flipShinyList, '吃果闪光亲代'],
-    [info.plainList, '普通亲代']
+    [info.shinyList,    '闪光亲代',     4],
+    [info.flipShinyList,'吃果闪光亲代', 5],
+    [info.plainList,    '普通亲代',     2]
   ];
   var caps = [10, 10, 3];
   var out = [];
   for (var g = 0; g < groups.length; g++) {
     var arr = groups[g][0] || [];
     for (var i = 0; i < arr.length && i < caps[g]; i++) {
-      if (arr[i] && Number.isFinite(arr[i].k)) out.push({ row: arr[i], cat: groups[g][1] });
+      if (arr[i] && Number.isFinite(arr[i].k))
+        out.push({ row: arr[i], cat: groups[g][1], catNum: groups[g][2] });
     }
   }
   out.sort(function (a, b) { return a.row.k - b.row.k; });
@@ -705,7 +706,8 @@ function paint() {
       var prefix = st2 === 0 ? '下一颗' : ('+' + st2 + ' · k=' + it.k);
       var rowRoll = it.roll != null ? (it.roll < 0.01 ? it.roll.toFixed(5) : it.roll.toFixed(4)) : '';
       var rowTh = it.parent && it.parent.shiny ? '1/16' : '1/512';
-      html += '<div class="pcg-row c4" title="roll=' + rowRoll + ' · threshold=' + rowTh + ' · k=' + it.k + '">';
+      var hitCat = hits[ri].catNum || 4;
+      html += '<div class="pcg-row c' + hitCat + '" title="roll=' + rowRoll + ' · threshold=' + rowTh + ' · k=' + it.k + '">';
       html += '<div><span class="pcg-k">' + prefix + '</span>' +
         '<span class="pcg-parent-badge">' + who2 + '</span>' + catTag(hits[ri].cat) + '</div>' +
         '<div class="pcg-val">' + (it.etaMs > 0 ? fmtDur(it.etaMs) : '—') + '</div></div>';
