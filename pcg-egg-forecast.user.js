@@ -650,11 +650,12 @@ function calcBoth(save) {
 /* ---------- 三类命中合并，按 k 升序（原版 popup 同款：限额 10/10/3） ---------- */
 function mergeHits(info, cap) {
   var groups = [
-    [info.shinyList,    '闪光亲代',     4],
-    [info.flipShinyList,'吃果闪光亲代', 5],
-    [info.plainList,    '普通亲代',     2]
+    [info.shinyList,       '闪光亲代',      4],
+    [info.flipShinyList,   '吃果闪光亲代',  5],
+    [info.plainList,       '普通亲代',      2],
+    [info.flipPlainList,   '吃果普通亲代',  3]
   ];
-  var caps = [10, 10, 3];
+  var caps = [10, 10, 3, 3];
   var out = [];
   for (var g = 0; g < groups.length; g++) {
     var arr = groups[g][0] || [];
