@@ -2,7 +2,7 @@
 // @name         Poke'Catch 闪光蛋预测面板
 // @name:en     Poke'Catch Shiny Egg Forecast
 // @namespace    pcg-egg-forecast
-// @version      0.2.1
+// @version      0.2.2
 // @description  纯计算，零网络请求。读取游戏存档的 trainerSeed + pension.laid，用游戏同款 53 位确定性哈希预测未来每颗蛋是否闪光、roll 值、亲代抽取、多久后是闪。
 // @match        *://pokecatch-online.netlify.app/*
 // @run-at       document-idle
@@ -375,6 +375,12 @@ GM_addStyle([
   '  border-radius: 4px; color: inherit; font-size: 14px; line-height: 1; }',
   '#pcg-efh .pcg-head button:hover { background: rgba(0,0,0,.08); }',
   '#pcg-efh.pcg-dark .pcg-head button:hover { background: rgba(255,255,255,.1); }',
+  '#pcg-efh #pcg-efh-fold { margin-left: auto; background: transparent; border: 1px solid transparent; color: inherit;',
+  '  width: 26px; height: 22px; display: flex; align-items: center; justify-content: center;',
+  '  font-size: 16px; font-weight: 700; line-height: 1; transition: all .15s; border-radius: 5px; }',
+  '#pcg-efh #pcg-efh-fold:hover { background: #fee2e2; border-color: #fca5a5; color: #dc2626; }',
+  '#pcg-efh #pcg-efh-fold:active { transform: scale(.92); }',
+  '#pcg-efh.pcg-dark #pcg-efh-fold:hover { background: rgba(239,68,68,.15); border-color: rgba(239,68,68,.4); color: #f87171; }',
   '#pcg-efh .pcg-body { padding: 10px; overflow-y: auto; flex: 1; }',
   '#pcg-efh .pcg-sec { margin-bottom: 12px; padding: 8px; border-radius: 8px; background: #f8fafc; border: 1px solid #e2e8f0; }',
   '#pcg-efh.pcg-dark .pcg-sec { background: #1c2128; border-color: #2a2f38; }',
@@ -492,8 +498,8 @@ function createPanel() {
   el.innerHTML = [
     '<div class="pcg-head" id="pcg-efh-head">',
     '  <span class="pcg-title">闪光蛋预测</span>',
-    '  <button id="pcg-efh-fold" title="最小化（回到悬浮球）">▾</button>',
     '  <button id="pcg-efh-theme" title="主题">◐</button>',
+    '  <button id="pcg-efh-fold" title="最小化（回到悬浮球）">—</button>',
     '</div>',
     '<div class="pcg-body" id="pcg-efh-body"></div>',
     '<div class="pcg-footer">',
@@ -540,7 +546,7 @@ function createPanel() {
     orb.classList.toggle('pcg-dark');
     storeSet('theme', el.classList.contains('pcg-dark') ? 'dark' : 'light');
   });
-  el.querySelector('#pcg-efh-refresh').addEventListener('click', function () { saveCache.at = 0; paint(); });
+  el.querySelector('#pcg-efh-refresh').addEventListener('click', function () { saveCache.at = 0; calcCache.at = 0; paint(); });
 
   /* 拖动 */
   (function drag() {
@@ -690,7 +696,6 @@ function paint() {
   }
 
   var laid = info.laid;
-  var nx = info.next;
   var html = '';
 
   /* ---- 块一：亲代池（移到最前） ---- */
@@ -712,19 +717,22 @@ function paint() {
           + (isShiny ? '✦ ' : '') + dexName(pp.id) + '</span>';
   }
   html += '</div>';
-  /* 下一颗小卡片（和后续命中同 pcg-row 样式，追加在亲代池末尾） */
-  if (nx) {
-    var nxWho = nx.parent
-      ? ((nx.parent.shiny ? '✦ ' : '') + '槽' + nx.parent.slot + ' ' + dexName(nx.parent.id))
+  /* 下一颗小卡片（和后续命中同 pcg-row 样式，追加在亲代池末尾）
+     数据源用 win.next：info.next 是原版 nextInfo，没有 cat 字段 */
+  var nx0 = win.next;
+  if (nx0) {
+    var nxWho = nx0.parent
+      ? ((nx0.parent.shiny ? '✦ ' : '') + '槽' + nx0.parent.slot + ' ' + dexName(nx0.parent.id))
       : '无亲代';
-    var nxCatText = CATEGORY[nx.cat] ? CATEGORY[nx.cat].name : '普通';
-    html += '<div class="pcg-row c' + nx.cat + '">';
-    html += '<div><span class="pcg-k">下一颗 · k=' + nx.k + '</span>';
+    var nxC = CATEGORY[nx0.cat] || CATEGORY[1];
+    html += '<div class="pcg-row c' + nx0.cat + '">';
+    html += '<div><span class="pcg-k">下一颗 · k=' + nx0.k + '</span>';
     html += '<span class="pcg-parent-badge">' + nxWho + '</span>';
-    if (CATEGORY[nx.cat] && CATEGORY[nx.cat].badge) {
-      html += '<span class="pcg-cat-badge">' + CATEGORY[nx.cat].badge + '</span>';
+    if (win.bx) html += '<span class="pcg-cat-badge">🫐 已喂果</span>';
+    if (nxC.badge) {
+      html += '<span class="pcg-cat-badge">' + nxC.badge + '</span>';
     }
-    html += '</div><div class="pcg-val">(' + nxCatText + ')</div></div>';
+    html += '</div><div class="pcg-val">(' + nxC.name + ')</div></div>';
   }
   html += '</div>';
 
