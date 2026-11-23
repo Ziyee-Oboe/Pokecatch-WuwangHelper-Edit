@@ -846,8 +846,8 @@ function paint() {
         if (Number.isInteger(_e.k) && _e.k < laid && (!curEgg || _e.k > curEgg.k)) curEgg = _e;
       }
       if (curEgg && curEgg.laidAt) {
-        var goal2 = Math.max(Number(curEgg.eggGoal) || K.EGG_MS, 60000);
-        var hatchAt = curEgg.laidAt + goal2;
+        /* hatchAt 是蛋自带的孵化完成时刻（原版时钟校准同款），比按 4h 周期推算准 */
+        var hatchAt = num(curEgg.hatchAt, 0) || (curEgg.laidAt + Math.max(Number(pen2.eggGoal) || K.EGG_MS, 60000));
         nxRemain = Math.max(0, hatchAt - serverNow);
         nxPct = Math.min(100, Math.max(0, Math.round((serverNow - curEgg.laidAt) / goal2 * 100)));
         nxRemainStr = nxRemain <= 0 ? '就绪' : fmtDur(nxRemain);
