@@ -2,7 +2,7 @@
 // @name         Poke'Catch 闪光蛋预测面板
 // @name:en      Poke'Catch Shiny Egg Forecast
 // @namespace    shinegg-forecast
-// @version      0.3.0
+// @version      0.4.0
 // @description  纯计算，零网络请求。读取游戏存档的 trainerSeed + pension.laid，用游戏同款 53 位确定性哈希预测未来每颗蛋是否闪光、roll 值、亲代抽取、多久后是闪。
 // @match        *://pokecatch-online.netlify.app/*
 // @run-at       document-idle
@@ -778,7 +778,6 @@ function renderRow(row) {
   var parentStr = row.parent
     ? ('<span class="pcg-parent-badge">' + (row.parent.shiny ? '✦' : '') + dexName(row.parent.id) + '·槽' + row.parent.slot + '</span>')
     : '';
-  var etaStr = row.etaMs > 0 ? fmtDur(row.etaMs) : '（下一颗）';
   var badge = c.badge ? '<span class="pcg-cat-badge">' + c.badge + '</span>' : '';
   var rollStr = row.roll != null ? (row.roll < 0.01 ? row.roll.toFixed(5) : row.roll.toFixed(4)) : '';
   var effectiveTh = row.parent && row.parent.shiny ? (1/16) : (1/512);
@@ -942,8 +941,11 @@ function paint() {
         nxRemainStr = nxRemain <= 0 ? '就绪' : fmtDur(nxRemain);
       }
     } catch (e) { /* ignore */ }
-    /* 第一行：标题 + 亲代 + 分类 badge */
-    html += '<div class="pcg-row c' + nx0.cat + ' pcg-next">';
+    /* 第一行：标题 + 亲代 + 分类 badge（专家信息走 hover tooltip） */
+    var nxRollStr = nx0.roll != null ? (nx0.roll < 0.01 ? nx0.roll.toFixed(5) : nx0.roll.toFixed(4)) : '';
+    html += '<div class="pcg-row c' + nx0.cat + ' pcg-next"'
+          + ' title="roll=' + nxRollStr + ' · threshold=' + (nx0.threshold != null ? nx0.threshold.toFixed(4) : '?')
+          + ' · threshold(bx)=' + (nx0.thresholdBx != null ? nx0.thresholdBx.toFixed(4) : '?') + ' · k=' + nx0.k + '">';
     html += '<div><span class="pcg-k">下一颗 · k=' + nx0.k + '</span>';
     html += '<span class="pcg-parent-badge">' + nxWho + '</span>';
     if (nxC.badge) html += '<span class="pcg-cat-badge">' + nxC.badge + '</span>';
@@ -972,7 +974,9 @@ function paint() {
         ? ((it.parent.shiny ? '✦ ' : '') + '槽' + it.parent.slot + ' ' + dexName(it.parent.id))
         : '无亲代';
       var prefix = st2 === 0 ? '下一颗' : ('第' + (st2 + 1) + '颗 · k=' + it.k);
-      var rowRoll = it.roll != null ? (it.roll < 0.01 ? it.roll.toFixed(5) : it.roll.toFixed(4)) : '';
+      /* 清单行本身不带 roll，用 k 现算回填（哈希开销可忽略），tooltip 不再留空 */
+      var r2 = (it.roll != null) ? it.roll : eggKHash(it.k, save);
+      var rowRoll = r2 < 0.01 ? r2.toFixed(5) : r2.toFixed(4);
       var rowTh = it.parent && it.parent.shiny ? '1/16' : '1/512';
       var hitCat = hits[ri].catNum || 4;
       html += '<div class="pcg-row c' + hitCat + '" title="roll=' + rowRoll + ' · threshold=' + rowTh + ' · k=' + it.k + '">';
@@ -1039,6 +1043,7 @@ if (storeGet('closed') && Date.now() - storeGet('closed') < 60 * 60 * 1000) {
 
 var panel = createPanel();
 paint();
-/* 不自动刷新：只保留手动按钮 */
+/* 自动刷新：每 30 秒重算重绘，让倒计时和进度条自己走（重扫描有 3 秒缓存，开销可忽略） */
+setInterval(paint, 30000);
 
 })();
