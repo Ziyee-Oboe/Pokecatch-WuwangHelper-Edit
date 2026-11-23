@@ -65,6 +65,87 @@ function fmtDur(ms) {
   return Math.floor(h / 24) + 'd ' + (h % 24) + 'h';
 }
 
+/* ---------- DOM 读取层（从游戏培育屋页面读当前蛋/亲代状态，只读，不触发请求） ---------- */
+var Q = {
+  eggs:       '#pen-eggs',
+  eggCard:    '.pen-egg[data-egg]',
+  eggReady:   '.pen-egg.ready[data-egg]:not([disabled])',
+  parents:    '#pen-res',
+  parentCard: '.pen-res[data-uid]',
+  gauge:      '.pen-gauge i'
+};
+function q(sel) { return document.querySelector(sel); }
+function qa(sel, box) { return Array.prototype.slice.call((box || document).querySelectorAll(sel)); }
+function num(v, d) { var n = Number(v); return isFinite(n) ? n : d; }
+function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+function gaugeOf(node) {
+  if (!node || !node.querySelector) return null;
+  var g = node.querySelector(Q.gauge);
+  if (!g || !g.style) return null;
+  var v = parseFloat(g.style.width);
+  return isFinite(v) ? clamp(v, 0, 100) : null;
+}
+
+/* 读当前页面蛋卡：uid -> { ready, disabled, text, title, gauge } */
+function domEggs() {
+  var out = {};
+  var box = q(Q.eggs);
+  if (!box) return out;       // 不在培育屋页面
+  var cards = qa(Q.eggCard, box);
+  for (var i = 0; i < cards.length; i++) {
+    var el = cards[i];
+    var uid = el.getAttribute && el.getAttribute('data-egg');
+    if (!uid) continue;
+    var small = el.querySelector ? el.querySelector('.meta small') : null;
+    var mon = el.querySelector ? el.querySelector('.egg-mon') : null;
+    out[String(uid)] = {
+      ready:    !!(el.classList && el.classList.contains('ready')),
+      disabled: !!(el.hasAttribute && el.hasAttribute('disabled')),
+      text:     small && small.textContent ? String(small.textContent).trim() : '',
+      title:    mon && mon.getAttribute ? (mon.getAttribute('title') || '') : '',
+      gauge:    gaugeOf(el)
+    };
+  }
+  return out;
+}
+
+/* 读当前页面亲代槽：uid -> { gauge } */
+function domParents() {
+  var out = {};
+  var box = q(Q.parents);
+  if (!box) return out;
+  var cards = qa(Q.parentCard, box);
+  for (var i = 0; i < cards.length; i++) {
+    var el = cards[i];
+    var uid = el.getAttribute && el.getAttribute('data-uid');
+    if (!uid) continue;
+    out[String(uid)] = { gauge: gaugeOf(el) };
+  }
+  return out;
+}
+
+/* 用孵化进度条反推游戏时钟偏移：offset = 服务器时间 - 浏览器时间（毫秒）。
+ * 只取 5%~95% 的样本（两端会被 clamp 截断），取中位数，异常值直接丢掉。
+ * 如果页面上没有有效蛋卡，返回 offset=0（本地时钟）。 */
+function calibrate(eggs, cards) {
+  var samples = [];
+  var now = Date.now();
+  for (var i = 0; i < eggs.length; i++) {
+    var e = eggs[i];
+    var c = cards[String(e.uid)];
+    if (!c || c.gauge == null || c.gauge < 5 || c.gauge > 95) continue;
+    var laid = num(e.laidAt, 0), hatch = num(e.hatchAt, 0);
+    if (hatch <= laid || laid <= 0) continue;
+    var xe = laid + (hatch - laid) * c.gauge / 100;
+    var off = xe - now;
+    if (Math.abs(off) <= 30 * 24 * 3600 * 1000) samples.push(off);
+  }
+  if (!samples.length) return { offset: 0, src: 'local', count: 0 };
+  samples.sort(function (a, b) { return a - b; });
+  var mid = samples[Math.floor(samples.length / 2)];
+  return { offset: mid, src: 'dom', count: samples.length };
+}
+
 /* ---------- 哈希 — 与游戏 Us(s) 逐位一致，别动 ---------- */
 function eggHash(str) {
   var S = 1779033703 ^ ((24348 << 16) | 41597);
@@ -687,6 +768,13 @@ function paint() {
     return;
   }
 
+  /* ---- DOM 读取（培育屋页面才有，否则返回空对象） ---- */
+  var eggCards = domEggs();
+  var parentCards = domParents();
+  var eggsFromSave = (save.pension && save.pension.eggs) || [];
+  var cal = calibrate(eggsFromSave, eggCards);
+  var serverNow = Date.now() + cal.offset;
+
   var calc = calcBoth(save);
   var info = calc.info, win = calc.win;
   if (!info || !win) {
@@ -787,7 +875,24 @@ function paint() {
   html += '</div>';
 
   body.innerHTML = html;
-  footer.textContent = 'laid=' + info.laid + ' · 近' + win.days + '天：裸闪 ' + bare + ' / 吃果 ' + berry + ' · 明细30颗';
+  /* footer：存档统计 + DOM 读取状态 + 时钟校准 */
+  var footBits = ['laid=' + info.laid];
+  footBits.push('近' + win.days + '天：裸闪 ' + bare + ' / 吃果 ' + berry);
+  var domCount = Object.keys(eggCards).length;
+  if (domCount > 0) {
+    var readyCount = 0;
+    for (var _uid in eggCards) if (eggCards[_uid].ready && !eggCards[_uid].disabled) readyCount++;
+    footBits.push('培育屋 ' + domCount + '颗（可孵' + readyCount + '）');
+  } else {
+    footBits.push('未在培育屋页');
+  }
+  if (cal.src === 'dom') {
+    var offMin = Math.round(cal.offset / 60000);
+    footBits.push('时钟校准 · 偏' + (offMin > 0 ? '+' : '') + offMin + '分（' + cal.count + '样本）');
+  } else {
+    footBits.push('时钟未校准');
+  }
+  footer.textContent = footBits.join(' · ');
 }
 
 /* ---------- 启动 ---------- */
