@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Poke'Catch 闪光蛋预测面板
-// @name:en     Poke'Catch Shiny Egg Forecast
-// @namespace    pcg-egg-forecast
-// @version      0.2.2
+// @name         闪蛋预测
+// @name:en      Shiny Egg Forecast
+// @namespace    shinegg-forecast
+// @version      0.3.0
 // @description  纯计算，零网络请求。读取游戏存档的 trainerSeed + pension.laid，用游戏同款 53 位确定性哈希预测未来每颗蛋是否闪光、roll 值、亲代抽取、多久后是闪。
 // @match        *://pokecatch-online.netlify.app/*
 // @run-at       document-idle
@@ -497,7 +497,7 @@ function createPanel() {
   el.id = 'pcg-efh';
   el.innerHTML = [
     '<div class="pcg-head" id="pcg-efh-head">',
-    '  <span class="pcg-title">闪光蛋预测</span>',
+    '  <span class="pcg-title">闪蛋预测</span>',
     '  <button id="pcg-efh-theme" title="主题">◐</button>',
     '  <button id="pcg-efh-fold" title="最小化（回到悬浮球）">—</button>',
     '</div>',
@@ -512,7 +512,7 @@ function createPanel() {
   /* 悬浮球（默认显示，点击展开面板） */
   var orb = document.createElement('div');
   orb.id = 'pcg-efh-orb';
-  orb.title = '闪光蛋预测 · 点击展开';
+  orb.title = '闪蛋预测 · 点击展开';
   orb.innerHTML = '✦';
   document.documentElement.appendChild(orb);
 
