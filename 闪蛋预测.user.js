@@ -544,8 +544,8 @@ GM_addStyle([
   '#pcg-efh .pcg-bx-badge.pcg-bx-off { background: #f1f5f9; color: #64748b; border-color: #e2e8f0; }',
   '#pcg-efh.pcg-dark .pcg-bx-badge.pcg-bx-off { background: rgba(148,163,184,.15); color: #94a3b8; border-color: #475569; }',
   /* 下一颗卡片：pcg-next 纵排（和普通 pcg-row 横排不同） */
-  '#pcg-efh .pcg-row.pcg-next { display: flex; flex-direction: column; gap: 4px; }',
-  '#pcg-efh .pcg-row.pcg-next .pcg-next-row2 { display: flex; align-items: center; gap: 6px; }',
+  '#pcg-efh .pcg-row.pcg-next { display: flex; flex-direction: column; gap: 4px; align-items: stretch; }',
+  '#pcg-efh .pcg-row.pcg-next .pcg-next-row2 { display: flex; align-items: center; gap: 6px; width: 100%; }',
   '#pcg-efh .pcg-row.pcg-next .pcg-next-bar-wrap { flex: 1; min-width: 40px; height: 10px; background: #e2e8f0; border-radius: 5px; overflow: hidden; }',
   '#pcg-efh.pcg-dark .pcg-row.pcg-next .pcg-next-bar-wrap { background: #334155; }',
   '#pcg-efh .pcg-row.pcg-next .pcg-next-bar { height: 100%; border-radius: 5px; transition: width .3s; }',
@@ -561,7 +561,7 @@ GM_addStyle([
   '  display: flex; justify-content: space-between; gap: 8px; background: #fafbfc; }',
   '#pcg-efh.pcg-dark .pcg-footer { border-color: #2a2f38; color: #9aa3af; background: #0f1216; }',
   '#pcg-efh .pcg-footer button { background: transparent; border: none; cursor: pointer; color: inherit; font-size: 11px; }',
-  '#pcg-efh #pcg-efh-refresh { background: linear-gradient(135deg,#fbbf24,#f59e0b); color: #fff; border: 1px solid #f59e0b; border-radius: 6px; padding: 4px 12px; font-size: 12px; font-weight: 700; cursor: pointer; box-shadow: 0 2px 8px rgba(245,158,11,.3); transition: transform .12s, box-shadow .12s; }',
+  '#pcg-efh #pcg-efh-refresh { background: linear-gradient(135deg,#fbbf24,#f59e0b); color: #fff; border: 1px solid #f59e0b; border-radius: 6px; padding: 4px 12px; font-size: 12px; font-weight: 700; cursor: pointer; box-shadow: 0 2px 8px rgba(245,158,11,.3); transition: transform .12s, box-shadow .12s; white-space: nowrap; flex-shrink: 0; }',
   '#pcg-efh #pcg-efh-refresh:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(245,158,11,.45); }',
   '#pcg-efh #pcg-efh-refresh:active { transform: translateY(0); }',
   '#pcg-efh.pcg-dark #pcg-efh-refresh { background: linear-gradient(135deg,#d97706,#b45309); border-color: #92400e; box-shadow: 0 2px 8px rgba(217,119,6,.35); }',
@@ -638,6 +638,7 @@ GM_addStyle([
   '#pcg-efh .pcg-slot.c1 .pcg-cat-badge { display: none; }',
   '#pcg-efh .pcg-slot-gauge { flex: 1; height: 4px; background: rgba(0,0,0,.08); border-radius: 2px; overflow: hidden; min-width: 40px; }',
   '#pcg-efh.pcg-dark .pcg-slot-gauge { background: rgba(255,255,255,.1); }',
+  '#pcg-efh .pcg-slot-gauge > div { height: 100%; border-radius: 2px; }',
   '#pcg-efh .pcg-slot.c1 .pcg-slot-gauge > div { background: #3b82f6; }',
   '#pcg-efh .pcg-slot.c2 .pcg-slot-gauge > div { background: linear-gradient(90deg,#f59e0b,#d97706); }',
   '#pcg-efh .pcg-slot.c3 .pcg-slot-gauge > div { background: linear-gradient(90deg,#6366f1,#4f46e5); }',
@@ -891,9 +892,18 @@ function paint() {
     var card2 = (eg.uid != null) ? eggCards[String(eg.uid)] : null;
     var disabled2 = !!(card2 && card2.disabled);
     var ready2 = card2 ? (card2.ready && !card2.disabled) : (num(eg.hatchAt, 0) > 0 && eg.hatchAt <= serverNow);
-    var pct2 = (card2 && card2.gauge != null) ? card2.gauge
-      : (num(eg.laidAt, 0) > 0 && num(eg.hatchAt, 0) > eg.laidAt
-          ? clamp((serverNow - eg.laidAt) / (eg.hatchAt - eg.laidAt) * 100, 0, 100) : 0);
+    var pct2;
+    if (card2 && card2.gauge != null) {
+      pct2 = card2.gauge;                                   /* DOM 进度最准 */
+    } else if (num(eg.laidAt, 0) > 0 && num(eg.hatchAt, 0) > num(eg.laidAt, 0)) {
+      pct2 = clamp((serverNow - eg.laidAt) / (eg.hatchAt - eg.laidAt) * 100, 0, 100);
+    } else if (num(eg.hatchAt, 0) > 0) {
+      /* 老存档没有 laidAt：用蛋周期倒推 */
+      var goalE = Math.max(num(eg.hatchAt, 0) - num(eg.laidAt, 0), Number(save.pension && save.pension.eggGoal) || K.EGG_MS, 60000);
+      pct2 = clamp(100 - (eg.hatchAt - serverNow) / goalE * 100, 0, 100);
+    } else {
+      pct2 = 0;
+    }
     var rollStr2 = ec.roll != null ? (ec.roll < 0.01 ? ec.roll.toFixed(5) : ec.roll.toFixed(4)) : '';
     html += '<div class="pcg-slot c' + ec.cat + (disabled2 ? ' pcg-slot-disabled' : '') + '"'
           + ' title="k=' + (eg.k != null ? eg.k : '?') + ' · roll=' + rollStr2 + '">';
@@ -924,20 +934,24 @@ function paint() {
       ? ((nx0.parent.shiny ? '✦ ' : '') + '槽' + nx0.parent.slot + ' ' + dexName(nx0.parent.id))
       : '无亲代';
     var nxC = CATEGORY[nx0.cat] || CATEGORY[1];
-    /* gauge + 倒计时：找正在孵着的最新一颗（k<laid 最大） */
+    /* gauge + 倒计时：取“最快孵出来”的那颗蛋（hatchAt 最小），即下一个出壳的 */
     var nxPct = 0, nxRemain = 0, nxRemainStr = '等待';
     try {
       var pen2 = save.pension;
+      var list2 = Array.isArray(pen2.eggs) ? pen2.eggs : [];
       var curEgg = null;
-      for (var _ei = 0; _ei < pen2.eggs.length; _ei++) {
-        var _e = pen2.eggs[_ei];
-        if (Number.isInteger(_e.k) && _e.k < laid && (!curEgg || _e.k > curEgg.k)) curEgg = _e;
+      for (var _ei = 0; _ei < list2.length; _ei++) {
+        var _e = list2[_ei];
+        var _h = num(_e.hatchAt, 0);
+        if (_h <= 0) continue;
+        if (!curEgg || _h < num(curEgg.hatchAt, 0)) curEgg = _e;
       }
-      if (curEgg && curEgg.laidAt) {
-        /* hatchAt 是蛋自带的孵化完成时刻（原版时钟校准同款），比按 4h 周期推算准 */
-        var hatchAt = num(curEgg.hatchAt, 0) || (curEgg.laidAt + Math.max(Number(pen2.eggGoal) || K.EGG_MS, 60000));
+      if (curEgg) {
+        var hatchAt = num(curEgg.hatchAt, 0);
+        var goal2 = Math.max(hatchAt - num(curEgg.laidAt, 0),
+                             Number(pen2.eggGoal) || K.EGG_MS, 60000);
         nxRemain = Math.max(0, hatchAt - serverNow);
-        nxPct = Math.min(100, Math.max(0, Math.round((serverNow - curEgg.laidAt) / goal2 * 100)));
+        nxPct = clamp((1 - nxRemain / goal2) * 100, 0, 100);
         nxRemainStr = nxRemain <= 0 ? '就绪' : fmtDur(nxRemain);
       }
     } catch (e) { /* ignore */ }
@@ -955,7 +969,7 @@ function paint() {
     var bxText = win.bx ? '已吃果' : '未吃果';
     html += '<div class="pcg-next-row2">';
     html += '<span class="pcg-bx-badge ' + bxClass + '">🫐 ' + bxText + '</span>';
-    html += '<div class="pcg-next-bar-wrap"><div class="pcg-next-bar" style="width:' + nxPct + '%"></div></div>';
+    html += '<div class="pcg-next-bar-wrap"><div class="pcg-next-bar" style="width:' + Math.round(nxPct) + '%"></div></div>';
     html += '<span class="pcg-next-remain">' + nxRemainStr + '</span>';
     html += '</div>';
     html += '</div>';
