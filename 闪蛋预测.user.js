@@ -630,7 +630,6 @@ function renderRow(row) {
     '  <div>' +
     '    <span class="pcg-k">k=' + row.k + '</span>' + parentStr + badge +
     '  </div>' +
-    '  <div class="pcg-val">第' + (row.step + 1) + '颗 · ' + etaStr + '</div>' +
     '</div>';
 }
 
