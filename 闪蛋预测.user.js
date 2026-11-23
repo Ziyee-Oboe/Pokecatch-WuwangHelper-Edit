@@ -44,7 +44,7 @@ var K = {
 /* ---------- 五种蛋分类样式表 ----------
  * 颜色设计思路：
  *   - 裸闪（2、4）用温暖金/橙色渐变，"天生闪光"感
- *   - 吃果闪（3、5）用冷色蓝/紫，"靛莓果魔力"感，附加 🫐 标记
+ *   - 吃果闪（3、5）用冷色蓝/紫，"靛莓果魔力"感，附加 ◆ 标记
  *   - 闪光亲代（4、5）颜色饱和度更高，因为亲代池里有闪更难得
  *   - 普通（1）用中性灰，不强调
  */
@@ -777,7 +777,7 @@ function renderRow(row) {
   var cat = row.cat || 1;
   var c = CATEGORY[cat];
   var parentStr = row.parent
-    ? ('<span class="pcg-parent-badge">' + (row.parent.shiny ? '✦' : '') + dexName(row.parent.id) + '·槽' + row.parent.slot + '</span>')
+    ? ('<span class="pcg-parent-badge">槽' + row.parent.slot + ' ' + (row.parent.shiny ? '✦ ' : '') + dexName(row.parent.id) + '</span>')
     : '';
   var badge = c.badge ? '<span class="pcg-cat-badge">' + c.badge + '</span>' : '';
   var rollStr = row.roll != null ? (row.roll < 0.01 ? row.roll.toFixed(5) : row.roll.toFixed(4)) : '';
@@ -931,7 +931,7 @@ function paint() {
   var nx0 = win.next;
   if (nx0) {
     var nxWho = nx0.parent
-      ? ((nx0.parent.shiny ? '✦ ' : '') + '槽' + nx0.parent.slot + ' ' + dexName(nx0.parent.id))
+      ? ('槽' + nx0.parent.slot + ' ' + (nx0.parent.shiny ? '✦ ' : '') + dexName(nx0.parent.id))
       : '无亲代';
     var nxC = CATEGORY[nx0.cat] || CATEGORY[1];
     /* gauge + 倒计时：取“最快孵出来”的那颗蛋（hatchAt 最小），即下一个出壳的 */
@@ -968,7 +968,7 @@ function paint() {
     var bxClass = win.bx ? 'pcg-bx-on' : 'pcg-bx-off';
     var bxText = win.bx ? '已吃果' : '未吃果';
     html += '<div class="pcg-next-row2">';
-    html += '<span class="pcg-bx-badge ' + bxClass + '">🫐 ' + bxText + '</span>';
+    html += '<span class="pcg-bx-badge ' + bxClass + '">◆ ' + bxText + '</span>';
     html += '<div class="pcg-next-bar-wrap"><div class="pcg-next-bar" style="width:' + Math.round(nxPct) + '%"></div></div>';
     html += '<span class="pcg-next-remain">' + nxRemainStr + '</span>';
     html += '</div>';
@@ -985,7 +985,7 @@ function paint() {
       var it = hits[ri].row;
       var st2 = Math.max(0, it.k - laid);
       var who2 = it.parent
-        ? ((it.parent.shiny ? '✦ ' : '') + '槽' + it.parent.slot + ' ' + dexName(it.parent.id))
+        ? ('槽' + it.parent.slot + ' ' + (it.parent.shiny ? '✦ ' : '') + dexName(it.parent.id))
         : '无亲代';
       var prefix = st2 === 0 ? '下一颗' : ('第' + (st2 + 1) + '颗 · k=' + it.k);
       /* 清单行本身不带 roll，用 k 现算回填（哈希开销可忽略），tooltip 不再留空 */
