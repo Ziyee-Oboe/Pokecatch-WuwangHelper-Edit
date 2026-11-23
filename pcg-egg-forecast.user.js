@@ -630,7 +630,7 @@ function renderRow(row) {
     '  <div>' +
     '    <span class="pcg-k">k=' + row.k + '</span>' + parentStr + badge +
     '  </div>' +
-    '  <div class="pcg-val">+' + row.step + ' · ' + etaStr + '</div>' +
+    '  <div class="pcg-val">第' + (row.step + 1) + '颗 · ' + etaStr + '</div>' +
     '</div>';
 }
 
@@ -748,7 +748,7 @@ function paint() {
       var who2 = it.parent
         ? ((it.parent.shiny ? '✦ ' : '') + '槽' + it.parent.slot + ' ' + dexName(it.parent.id))
         : '无亲代';
-      var prefix = st2 === 0 ? '下一颗' : ('第' + st2 + '颗 · k=' + it.k);
+      var prefix = st2 === 0 ? '下一颗' : ('第' + (st2 + 1) + '颗 · k=' + it.k);
       var rowRoll = it.roll != null ? (it.roll < 0.01 ? it.roll.toFixed(5) : it.roll.toFixed(4)) : '';
       var rowTh = it.parent && it.parent.shiny ? '1/16' : '1/512';
       var hitCat = hits[ri].catNum || 4;
