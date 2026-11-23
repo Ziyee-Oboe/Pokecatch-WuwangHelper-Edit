@@ -33,6 +33,7 @@ var K = {
   DITTO: 132,
   HATCH_MS: 240 * 60000,          // 孵化时间 = 4h
   EGG_MS: 240 * 60000,            // 生蛋周期 = 4h
+  INCUBATOR: 4,                   // 孵蛋槽上限（与原插件 PENSION.INCUBATOR 一致）
   SHINY_RATE: 1 / 512,
   SHINY_PARENT_RATE: 1 / 16,      // sp:2 新档，≈6.25%
   SHINY_PARENT_RATE_OLD: 0.1,     // sp:1 旧档，10%
@@ -170,6 +171,34 @@ function trainerSeed(save) {
 /* ---------- 蛋 k 的 roll ---------- */
 function eggKHash(k, save) {
   return eggHash(trainerSeed(save) + '|egg|' + k + '|0');
+}
+
+/* ---------- 已下蛋的分类（孵蛋槽用） ----------
+ * 五分类口径与 windowScan 一致，但 sp 用蛋自带的标记（下蛋那一刻就定死了），
+ * 比按当前亲代池反推更准。roll 来源照抄原版 eggIsShiny 三分支：
+ * 有 k 的新蛋用 k 哈希，旧蛋回退 uid / laidAt 哈希，更老的存档直接读 shiny 字段。 */
+function eggCatOf(e, save) {
+  var base = K.SHINY_RATE;
+  var sp = !!e.sp;
+  var pr = sp ? (Number(e.sp) === 2 ? Math.max(K.SHINY_PARENT_RATE, base) : K.SHINY_PARENT_RATE_OLD) : base;
+  if (Object.prototype.hasOwnProperty.call(e, 'shiny')) {
+    return { cat: e.shiny ? 4 : 1, roll: null, shiny: !!e.shiny };
+  }
+  var roll;
+  if (typeof e.k === 'number' && isFinite(e.k) && Math.floor(e.k) === e.k) {
+    roll = eggKHash(e.k, save);
+  } else {
+    var key = String(e.uid != null ? e.uid : (e.laidAt != null ? e.laidAt : ''));
+    if (!key) return { cat: 1, roll: null, shiny: false };
+    roll = eggHash(key);
+  }
+  var cat;
+  if (roll < base) cat = 2;                        // 普通闪（<1/512，必闪）
+  else if (roll < base * 2) cat = 3;               // 吃果普通闪（条件性标签）
+  else if (sp && roll < pr) cat = 4;               // 亲代闪（sp 蛋，必闪）
+  else if (sp && roll < pr * 2) cat = 5;           // 吃果亲代闪（条件性标签）
+  else cat = 1;
+  return { cat: cat, roll: roll, shiny: roll < pr };
 }
 
 /* ============================================================================
@@ -592,7 +621,32 @@ GM_addStyle([
   '#pcg-efh .pcg-prog.pcg-prog-ditto { background: #e0f2fe; color: #0369a1; border-color: #7dd3fc; font-weight: 600; }',
   '#pcg-efh.pcg-dark .pcg-prog.pcg-prog-ditto { background: rgba(14,165,233,.15); color: #7dd3fc; border-color: #0c4a6e; }',
   '#pcg-efh .pcg-prog.pcg-prog-empty { background: #f1f5f9; color: #94a3b8; border-color: #cbd5e1; text-decoration: line-through; }',
-  '#pcg-efh.pcg-dark .pcg-prog.pcg-prog-empty { background: rgba(148,163,184,.12); color: #64748b; border-color: #334155; }'
+  '#pcg-efh.pcg-dark .pcg-prog.pcg-prog-empty { background: rgba(148,163,184,.12); color: #64748b; border-color: #334155; }',
+  /* ---- 孵蛋槽卡片 ---- */
+  '#pcg-efh .pcg-slot { display: flex; align-items: center; gap: 6px; padding: 4px 8px; margin-bottom: 3px;',
+  '  border-radius: 6px; background: rgba(255,255,255,.5); border: 1px solid #e2e8f0; font-size: 11px; }',
+  '#pcg-efh.pcg-dark .pcg-slot { background: rgba(255,255,255,.04); border-color: #2a2f38; }',
+  '#pcg-efh .pcg-slot.pcg-slot-disabled { opacity: .5; }',
+  '#pcg-efh .pcg-slot.c2 .pcg-cat-badge { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }',
+  '#pcg-efh.pcg-dark .pcg-slot.c2 .pcg-cat-badge { background: rgba(245,158,11,.15); color: #fcd34d; border-color: #92400e; }',
+  '#pcg-efh .pcg-slot.c3 .pcg-cat-badge { background: #e0e7ff; color: #3730a3; border: 1px solid #a5b4fc; }',
+  '#pcg-efh.pcg-dark .pcg-slot.c3 .pcg-cat-badge { background: rgba(99,102,241,.15); color: #a5b4fc; border-color: #3730a3; }',
+  '#pcg-efh .pcg-slot.c4 .pcg-cat-badge { background: #ffedd5; color: #9a3412; border: 1px solid #fdba74; }',
+  '#pcg-efh.pcg-dark .pcg-slot.c4 .pcg-cat-badge { background: rgba(234,88,12,.15); color: #fdba74; border-color: #9a3412; }',
+  '#pcg-efh .pcg-slot.c5 .pcg-cat-badge { background: #f3e8ff; color: #6b21a8; border: 1px solid #d8b4fe; }',
+  '#pcg-efh.pcg-dark .pcg-slot.c5 .pcg-cat-badge { background: rgba(147,51,234,.15); color: #d8b4fe; border-color: #6b21a8; }',
+  '#pcg-efh .pcg-slot.c1 .pcg-cat-badge { display: none; }',
+  '#pcg-efh .pcg-slot-gauge { flex: 1; height: 4px; background: rgba(0,0,0,.08); border-radius: 2px; overflow: hidden; min-width: 40px; }',
+  '#pcg-efh.pcg-dark .pcg-slot-gauge { background: rgba(255,255,255,.1); }',
+  '#pcg-efh .pcg-slot.c1 .pcg-slot-gauge > div { background: #3b82f6; }',
+  '#pcg-efh .pcg-slot.c2 .pcg-slot-gauge > div { background: linear-gradient(90deg,#f59e0b,#d97706); }',
+  '#pcg-efh .pcg-slot.c3 .pcg-slot-gauge > div { background: linear-gradient(90deg,#6366f1,#4f46e5); }',
+  '#pcg-efh .pcg-slot.c4 .pcg-slot-gauge > div { background: linear-gradient(90deg,#ea580c,#c2410c); }',
+  '#pcg-efh .pcg-slot.c5 .pcg-slot-gauge > div { background: linear-gradient(90deg,#9333ea,#7e22ce); }',
+  '#pcg-efh .pcg-slot-ready-text { color: #15803d; font-weight: 700; }',
+  '#pcg-efh.pcg-dark .pcg-slot-ready-text { color: #86efac; }',
+  '#pcg-efh .pcg-slot-remain { color: #5a616b; font-variant-numeric: tabular-nums; white-space: nowrap; }',
+  '#pcg-efh.pcg-dark .pcg-slot-remain { color: #9aa3af; }'
 ].join('\n'));
 
 /* ---------- 创建面板 ---------- */
@@ -828,6 +882,41 @@ function paint() {
           + (isShiny ? '✦ ' : '') + dexName(pp.id) + '</span>';
   }
   html += '</div>';
+  /* ---- 孵蛋槽：当前正在孵的蛋（存档 eggs + 培育屋页面状态合并，不在培育屋页也能显示） ---- */
+  var slotMax = Math.min(K.INCUBATOR, Math.max(num(save.pension.open && save.pension.open.eggs, 1), eggsFromSave.length, 1));
+  html += '<div class="pcg-sec" style="margin-top:8px;margin-bottom:4px;">';
+  html += '<div class="pcg-sec-title"><span>孵蛋槽（当前页 · ' + eggsFromSave.length + '/' + slotMax + '）</span></div>';
+  for (var si = 0; si < eggsFromSave.length; si++) {
+    var eg = eggsFromSave[si] || {};
+    var ec = eggCatOf(eg, save);
+    var card2 = (eg.uid != null) ? eggCards[String(eg.uid)] : null;
+    var disabled2 = !!(card2 && card2.disabled);
+    var ready2 = card2 ? (card2.ready && !card2.disabled) : (num(eg.hatchAt, 0) > 0 && eg.hatchAt <= serverNow);
+    var pct2 = (card2 && card2.gauge != null) ? card2.gauge
+      : (num(eg.laidAt, 0) > 0 && num(eg.hatchAt, 0) > eg.laidAt
+          ? clamp((serverNow - eg.laidAt) / (eg.hatchAt - eg.laidAt) * 100, 0, 100) : 0);
+    var rollStr2 = ec.roll != null ? (ec.roll < 0.01 ? ec.roll.toFixed(5) : ec.roll.toFixed(4)) : '';
+    html += '<div class="pcg-slot c' + ec.cat + (disabled2 ? ' pcg-slot-disabled' : '') + '"'
+          + ' title="k=' + (eg.k != null ? eg.k : '?') + ' · roll=' + rollStr2 + '">';
+    html += '<span>' + (ec.shiny ? '✦ ' : '') + (eg.id ? dexName(eg.id) : '#?') + '</span>';
+    var cc2 = CATEGORY[ec.cat] || CATEGORY[1];
+    if (cc2.badge) html += '<span class="pcg-cat-badge">' + cc2.badge + '</span>';
+    if (ready2) {
+      html += '<span class="pcg-slot-ready-text" style="margin-left:auto;">ready ✓</span>';
+    } else {
+      html += '<div class="pcg-slot-gauge"><div style="width:' + Math.round(pct2) + '%"></div></div>';
+      var hasHatch2 = num(eg.hatchAt, 0) > 0;
+      var rem2 = hasHatch2 ? Math.max(0, eg.hatchAt - serverNow) : 0;
+      html += '<span class="pcg-slot-remain">' + (rem2 > 0 ? fmtDur(rem2) : (hasHatch2 ? '就绪' : '—')) + '</span>';
+    }
+    html += '</div>';
+  }
+  /* 空槽保留渲染并淡化显示 */
+  for (var ei2 = eggsFromSave.length; ei2 < slotMax; ei2++) {
+    html += '<div class="pcg-slot pcg-slot-disabled c1"><span style="color:#94a3b8;">— 空槽 —</span></div>';
+  }
+  html += '</div>';
+
   /* 下一颗小卡片（pcg-next 两行布局：第一行标题+分类，第二行 bx+gauge+倒计时）
      数据源：win.next（分类） + save.pension.eggs（gauge+倒计时，取 k<laid 最大那颗） */
   var nx0 = win.next;
