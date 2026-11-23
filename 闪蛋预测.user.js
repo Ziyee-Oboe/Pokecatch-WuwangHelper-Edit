@@ -324,9 +324,9 @@ function nextShinyInfo(save) {
 }
 
 /* ---------- 30 天窗口扫描：把未来 720 颗蛋全部分类 ---------- */
-var WINDOW_DAYS = 30;
-function windowScan(save, days) {
-  days = days || WINDOW_DAYS;
+var WINDOW_COUNT = 180;   /* 固定向后扫 180 颗（≈30 天，纯 k 值窗口，不依赖时间流速） */
+function windowScan(save, count) {
+  count = count || WINDOW_COUNT;
   var pen = save && save.pension;
   if (!pen) return null;
   var laid = Number.isFinite(pen.laid)
@@ -354,9 +354,8 @@ function windowScan(save, days) {
     }
   } catch (e) { /* ignore */ }
 
-  /* 窗口大小 */
-  var totalMs = days * 86400000;
-  var count = Math.floor(totalMs / goal) + 1;  // 30 天 ÷ 4h ≈ 180 颗
+  /* 窗口大小：固定颗数，不再依赖天数 */
+  var N = count;
 
   /* 逐颗扫描 */
   var rows = [];
@@ -396,7 +395,7 @@ function windowScan(save, days) {
   return {
     laid: laid, bx: bxNext, pool: pool,
     poolSize: pool.length, poolShiny: pool.filter(function (p) { return p.shiny; }).length,
-    totalScanned: rows.length, days: days,
+    totalScanned: rows.length, count: N,
     rows: rows, buckets: catBuckets,
     /* 便捷：nextShinyInfo 的 info.next 等价物 */
     next: (function () {
@@ -509,6 +508,26 @@ GM_addStyle([
   '#pcg-efh.pcg-dark .pcg-row.c4 .pcg-cat-badge { background: rgba(234,88,12,.15); color: #fdba74; border-color: #9a3412; }',
   '#pcg-efh .pcg-row.c5 .pcg-cat-badge { background: #f3e8ff; color: #6b21a8; border: 1px solid #d8b4fe; }',
   '#pcg-efh.pcg-dark .pcg-row.c5 .pcg-cat-badge { background: rgba(147,51,234,.15); color: #d8b4fe; border-color: #6b21a8; }',
+  /* bx 状态 badge（下一颗卡片用） */
+  '#pcg-efh .pcg-bx-badge { font-size: 10px; padding: 1px 5px; border-radius: 3px; font-weight: 600; border: 1px solid transparent; letter-spacing: .02em; }',
+  '#pcg-efh .pcg-bx-badge.pcg-bx-on { background: #f3e8ff; color: #6b21a8; border-color: #d8b4fe; }',
+  '#pcg-efh.pcg-dark .pcg-bx-badge.pcg-bx-on { background: rgba(147,51,234,.15); color: #d8b4fe; border-color: #6b21a8; }',
+  '#pcg-efh .pcg-bx-badge.pcg-bx-off { background: #f1f5f9; color: #64748b; border-color: #e2e8f0; }',
+  '#pcg-efh.pcg-dark .pcg-bx-badge.pcg-bx-off { background: rgba(148,163,184,.15); color: #94a3b8; border-color: #475569; }',
+  /* 下一颗卡片：pcg-next 纵排（和普通 pcg-row 横排不同） */
+  '#pcg-efh .pcg-row.pcg-next { display: flex; flex-direction: column; gap: 4px; }',
+  '#pcg-efh .pcg-row.pcg-next .pcg-next-row2 { display: flex; align-items: center; gap: 6px; }',
+  '#pcg-efh .pcg-row.pcg-next .pcg-next-bar-wrap { flex: 1; min-width: 40px; height: 10px; background: #e2e8f0; border-radius: 5px; overflow: hidden; }',
+  '#pcg-efh.pcg-dark .pcg-row.pcg-next .pcg-next-bar-wrap { background: #334155; }',
+  '#pcg-efh .pcg-row.pcg-next .pcg-next-bar { height: 100%; border-radius: 5px; transition: width .3s; }',
+  /* 下一颗 gauge 颜色（按分类） */
+  '#pcg-efh .pcg-row.pcg-next.c1 .pcg-next-bar { background: #3b82f6; }',
+  '#pcg-efh .pcg-row.pcg-next.c2 .pcg-next-bar { background: linear-gradient(90deg,#f59e0b,#d97706); }',
+  '#pcg-efh .pcg-row.pcg-next.c3 .pcg-next-bar { background: linear-gradient(90deg,#6366f1,#4f46e5); }',
+  '#pcg-efh .pcg-row.pcg-next.c4 .pcg-next-bar { background: linear-gradient(90deg,#ea580c,#c2410c); }',
+  '#pcg-efh .pcg-row.pcg-next.c5 .pcg-next-bar { background: linear-gradient(90deg,#9333ea,#7e22ce); }',
+  '#pcg-efh .pcg-row.pcg-next .pcg-next-remain { font-size: 11px; color: #5a616b; font-variant-numeric: tabular-nums; white-space: nowrap; }',
+  '#pcg-efh.pcg-dark .pcg-row.pcg-next .pcg-next-remain { color: #9aa3af; }',
   '#pcg-efh .pcg-footer { padding: 6px 10px; border-top: 1px solid #e4e6ea; font-size: 11px; color: #5a616b;',
   '  display: flex; justify-content: space-between; gap: 8px; background: #fafbfc; }',
   '#pcg-efh.pcg-dark .pcg-footer { border-color: #2a2f38; color: #9aa3af; background: #0f1216; }',
@@ -709,7 +728,7 @@ function renderRow(row) {
   return '' +
     '<div class="pcg-row c' + cat + '" title="' + title + '">' +
     '  <div>' +
-    '    <span class="pcg-k">k=' + row.k + '</span>' + parentStr + badge +
+    '    <span class="pcg-k">第' + (row.step + 1) + '颗 · k=' + row.k + '</span>' + parentStr + badge +
     '  </div>' +
     '</div>';
 }
@@ -722,7 +741,7 @@ function calcBoth(save) {
     return { info: calcCache.info, win: calcCache.win };
   }
   var info = nextShinyInfo(save);            // 原版口径：最近的闪（三类清单）
-  var win = windowScan(save, WINDOW_DAYS);   // 窗口扫描：蛋列表
+  var win = windowScan(save, WINDOW_COUNT);   // 窗口扫描：蛋列表
   calcCache = { at: now, info: info, win: win };
   return { info: info, win: win };
 }
@@ -805,22 +824,46 @@ function paint() {
           + (isShiny ? '✦ ' : '') + dexName(pp.id) + '</span>';
   }
   html += '</div>';
-  /* 下一颗小卡片（和后续命中同 pcg-row 样式，追加在亲代池末尾）
-     数据源用 win.next：info.next 是原版 nextInfo，没有 cat 字段 */
+  /* 下一颗小卡片（pcg-next 两行布局：第一行标题+分类，第二行 bx+gauge+倒计时）
+     数据源：win.next（分类） + save.pension.eggs（gauge+倒计时，取 k<laid 最大那颗） */
   var nx0 = win.next;
   if (nx0) {
     var nxWho = nx0.parent
       ? ((nx0.parent.shiny ? '✦ ' : '') + '槽' + nx0.parent.slot + ' ' + dexName(nx0.parent.id))
       : '无亲代';
     var nxC = CATEGORY[nx0.cat] || CATEGORY[1];
-    html += '<div class="pcg-row c' + nx0.cat + '">';
+    /* gauge + 倒计时：找正在孵着的最新一颗（k<laid 最大） */
+    var nxPct = 0, nxRemain = 0, nxRemainStr = '等待';
+    try {
+      var pen2 = save.pension;
+      var curEgg = null;
+      for (var _ei = 0; _ei < pen2.eggs.length; _ei++) {
+        var _e = pen2.eggs[_ei];
+        if (Number.isInteger(_e.k) && _e.k < laid && (!curEgg || _e.k > curEgg.k)) curEgg = _e;
+      }
+      if (curEgg && curEgg.laidAt) {
+        var goal2 = Math.max(Number(curEgg.eggGoal) || K.EGG_MS, 60000);
+        var hatchAt = curEgg.laidAt + goal2;
+        nxRemain = Math.max(0, hatchAt - serverNow);
+        nxPct = Math.min(100, Math.max(0, Math.round((serverNow - curEgg.laidAt) / goal2 * 100)));
+        nxRemainStr = nxRemain <= 0 ? '就绪' : fmtDur(nxRemain);
+      }
+    } catch (e) { /* ignore */ }
+    /* 第一行：标题 + 亲代 + 分类 badge */
+    html += '<div class="pcg-row c' + nx0.cat + ' pcg-next">';
     html += '<div><span class="pcg-k">下一颗 · k=' + nx0.k + '</span>';
     html += '<span class="pcg-parent-badge">' + nxWho + '</span>';
-    if (win.bx) html += '<span class="pcg-cat-badge">🫐 已喂果</span>';
-    if (nxC.badge) {
-      html += '<span class="pcg-cat-badge">' + nxC.badge + '</span>';
-    }
-    html += '</div><div class="pcg-val">(' + nxC.name + ')</div></div>';
+    if (nxC.badge) html += '<span class="pcg-cat-badge">' + nxC.badge + '</span>';
+    html += '</div>';
+    /* 第二行：bx badge + gauge + 倒计时 */
+    var bxClass = win.bx ? 'pcg-bx-on' : 'pcg-bx-off';
+    var bxText = win.bx ? '已吃果' : '未吃果';
+    html += '<div class="pcg-next-row2">';
+    html += '<span class="pcg-bx-badge ' + bxClass + '">🫐 ' + bxText + '</span>';
+    html += '<div class="pcg-next-bar-wrap"><div class="pcg-next-bar" style="width:' + nxPct + '%"></div></div>';
+    html += '<span class="pcg-next-remain">' + nxRemainStr + '</span>';
+    html += '</div>';
+    html += '</div>';
   }
   html += '</div>';
 
@@ -854,7 +897,7 @@ function paint() {
   var bare = win.buckets[2].length + win.buckets[4].length;
   var berry = win.buckets[3].length + win.buckets[5].length;
   html += '<div class="pcg-sec">';
-  html += '<div class="pcg-sec-title"><span>蛋列表（近 ' + win.days + ' 天）</span>';
+  html += '<div class="pcg-sec-title"><span>蛋列表（近 ' + win.count + ' 颗）</span>';
   html += '<span class="pcg-cat-count">裸闪 ' + bare + ' · 吃果 ' + berry + '</span></div>';
 
   /* 全量分布条 */
@@ -871,13 +914,13 @@ function paint() {
   for (var ai = 0; ai < showRows.length; ai++) {
     html += renderRow(showRows[ai]);
   }
-  html += '<div class="pcg-empty">统计为近 ' + win.days + ' 天全部 ' + win.totalScanned + ' 颗 · 吃果类需喂靛莓果才成立</div>';
+  html += '<div class="pcg-empty">统计为近 ' + win.count + ' 颗全部扫描结果（展示前 30 颗） · 吃果类需喂靛莓果才成立</div>';
   html += '</div>';
 
   body.innerHTML = html;
   /* footer：存档统计 + DOM 读取状态 + 时钟校准 */
-  var footBits = ['laid=' + info.laid];
-  footBits.push('近' + win.days + '天：裸闪 ' + bare + ' / 吃果 ' + berry);
+  var footBits = ['k=' + info.laid];
+  footBits.push('近' + win.count + '颗：裸闪 ' + bare + ' / 吃果 ' + berry);
   var domCount = Object.keys(eggCards).length;
   if (domCount > 0) {
     var readyCount = 0;
