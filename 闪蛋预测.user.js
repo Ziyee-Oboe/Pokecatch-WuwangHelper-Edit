@@ -754,8 +754,7 @@ function paint() {
       var hitCat = hits[ri].catNum || 4;
       html += '<div class="pcg-row c' + hitCat + '" title="roll=' + rowRoll + ' · threshold=' + rowTh + ' · k=' + it.k + '">';
       html += '<div><span class="pcg-k">' + prefix + '</span>' +
-        '<span class="pcg-parent-badge">' + who2 + '</span>' + catTag(hitCat) + '</div>' +
-        '<div class="pcg-val">' + (it.etaMs > 0 ? fmtDur(it.etaMs) : '—') + '</div></div>';
+        '<span class="pcg-parent-badge">' + who2 + '</span>' + catTag(hitCat) + '</div></div>';
     }
   } else {
     html += '<div class="pcg-empty">扫描范围内暂无命中</div>';
