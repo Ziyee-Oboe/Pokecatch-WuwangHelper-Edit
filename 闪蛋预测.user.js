@@ -636,6 +636,7 @@ GM_addStyle([
   '#pcg-efh .pcg-slot.c5 .pcg-cat-badge { background: #f3e8ff; color: #6b21a8; border: 1px solid #d8b4fe; }',
   '#pcg-efh.pcg-dark .pcg-slot.c5 .pcg-cat-badge { background: rgba(147,51,234,.15); color: #d8b4fe; border-color: #6b21a8; }',
   '#pcg-efh .pcg-slot.c1 .pcg-cat-badge { display: none; }',
+  '#pcg-efh .pcg-slot .pcg-parent-badge { margin-left: 0; white-space: nowrap; }',
   '#pcg-efh .pcg-slot-gauge { flex: 1; height: 4px; background: rgba(0,0,0,.08); border-radius: 2px; overflow: hidden; min-width: 40px; }',
   '#pcg-efh.pcg-dark .pcg-slot-gauge { background: rgba(255,255,255,.1); }',
   '#pcg-efh .pcg-slot-gauge > div { height: 100%; border-radius: 2px; }',
@@ -907,7 +908,7 @@ function paint() {
     var rollStr2 = ec.roll != null ? (ec.roll < 0.01 ? ec.roll.toFixed(5) : ec.roll.toFixed(4)) : '';
     html += '<div class="pcg-slot c' + ec.cat + (disabled2 ? ' pcg-slot-disabled' : '') + '"'
           + ' title="k=' + (eg.k != null ? eg.k : '?') + ' · roll=' + rollStr2 + '">';
-    html += '<span>' + (ec.shiny ? '✦ ' : '') + (eg.id ? dexName(eg.id) : '#?') + '</span>';
+    html += '<span class="pcg-parent-badge">' + (ec.shiny ? '✦ ' : '') + (eg.id ? dexName(eg.id) : '#?') + '</span>';
     var cc2 = CATEGORY[ec.cat] || CATEGORY[1];
     if (cc2.badge) html += '<span class="pcg-cat-badge">' + cc2.badge + '</span>';
     if (ready2) {
