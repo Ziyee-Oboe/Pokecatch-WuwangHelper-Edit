@@ -1034,17 +1034,9 @@ function paint() {
   footBits.push('近' + win.count + '颗：裸闪 ' + bare + ' / 吃果 ' + berry);
   var domCount = Object.keys(eggCards).length;
   if (domCount > 0) {
-    var readyCount = 0;
-    for (var _uid in eggCards) if (eggCards[_uid].ready && !eggCards[_uid].disabled) readyCount++;
-    footBits.push('培育屋 ' + domCount + '颗（可孵' + readyCount + '）');
+    footBits.push('培育屋 ' + domCount + '颗');
   } else {
     footBits.push('未在培育屋页');
-  }
-  if (cal.src === 'dom') {
-    var offMin = Math.round(cal.offset / 60000);
-    footBits.push('时钟校准 · 偏' + (offMin > 0 ? '+' : '') + offMin + '分（' + cal.count + '样本）');
-  } else {
-    footBits.push('时钟未校准');
   }
   footer.textContent = footBits.join(' · ');
 }
