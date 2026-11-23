@@ -493,41 +493,33 @@ GM_addStyle([
   '#pcg-efh .pcg-body { padding: 10px; overflow-y: auto; flex: 1; }',
   '#pcg-efh .pcg-sec { margin-bottom: 12px; padding: 8px; border-radius: 8px; background: #f8fafc; border: 1px solid #e2e8f0; }',
   '#pcg-efh.pcg-dark .pcg-sec { background: #1c2128; border-color: #2a2f38; }',
-  '#pcg-efh .pcg-sec.c2 { background: #fef9c3; border-color: #fde68a; }',
-  '#pcg-efh.pcg-dark .pcg-sec.c2 { background: #422006; border-color: #92400e; }',
-  '#pcg-efh .pcg-sec.c3 { background: #eef2ff; border-color: #c7d2fe; }',
-  '#pcg-efh.pcg-dark .pcg-sec.c3 { background: #1e1b4b; border-color: #3730a3; }',
-  '#pcg-efh .pcg-sec.c4 { background: #fff7ed; border-color: #fed7aa; }',
-  '#pcg-efh.pcg-dark .pcg-sec.c4 { background: #431407; border-color: #9a3412; }',
-  '#pcg-efh .pcg-sec.c5 { background: #faf5ff; border-color: #e9d5ff; }',
-  '#pcg-efh.pcg-dark .pcg-sec.c5 { background: #3b0764; border-color: #6b21a8; }',
   '#pcg-efh .pcg-sec-title { font-size: 12px; font-weight: 700; letter-spacing: .04em; margin-bottom: 6px;',
   '  display: flex; align-items: center; gap: 6px; }',
   '#pcg-efh .pcg-sec-title .pcg-cat-count { font-size: 10.5px; padding: 1px 6px; border-radius: 10px; background: rgba(0,0,0,.08); color: inherit; }',
   '#pcg-efh.pcg-dark .pcg-sec-title .pcg-cat-count { background: rgba(255,255,255,.12); }',
+  /* ===== 统一行样式：下一颗 / 最近的闪 / 蛋列表 三者共用（只改这一处） ===== */
   '#pcg-efh .pcg-row { display: flex; justify-content: space-between; align-items: baseline; padding: 4px 6px; margin-bottom: 3px;',
-  '  border-radius: 6px; background: rgba(255,255,255,.5); border: 1px solid transparent; transition: all .15s; }',
-  '#pcg-efh.pcg-dark .pcg-row { background: rgba(255,255,255,.04); }',
-  '#pcg-efh .pcg-row.c2 { background: linear-gradient(90deg,#fffbeb,#fef3c7); border-color: #fde68a; }',
-  '#pcg-efh.pcg-dark .pcg-row.c2 { background: linear-gradient(90deg,#422006,#78350f); border-color: #92400e; }',
-  '#pcg-efh .pcg-row.c3 { background: linear-gradient(90deg,#eef2ff,#e0e7ff); border-color: #c7d2fe; }',
-  '#pcg-efh.pcg-dark .pcg-row.c3 { background: linear-gradient(90deg,#1e1b4b,#312e81); border-color: #3730a3; }',
-  '#pcg-efh .pcg-row.c4 { background: linear-gradient(90deg,#fff7ed,#ffedd5); border-color: #fed7aa; }',
-  '#pcg-efh.pcg-dark .pcg-row.c4 { background: linear-gradient(90deg,#431407,#7c2d12); border-color: #9a3412; }',
-  '#pcg-efh .pcg-row.c5 { background: linear-gradient(90deg,#faf5ff,#f3e8ff); border-color: #e9d5ff; }',
-  '#pcg-efh.pcg-dark .pcg-row.c5 { background: linear-gradient(90deg,#3b0764,#581c87); border-color: #6b21a8; }',
-  '#pcg-efh.pcg-dark .pcg-row.c1 { background: rgba(255,255,255,.04); border-color: #2a2f38; }',
-  '#pcg-efh .pcg-k { font-family: "SF Mono",Menlo,Consolas,monospace; font-size: 11px; color: #5a616b; font-weight: 500; }',
-  '#pcg-efh.pcg-dark .pcg-k { color: #9aa3af; }',
-  '#pcg-efh .pcg-val { font-variant-numeric: tabular-nums; font-weight: 600; }',
-  '#pcg-efh.pcg-dark .pcg-val { color: #e6e9ef; }',
-  '#pcg-efh .pcg-bar { height: 5px; background: #e4e6ea; border-radius: 3px; overflow: hidden; margin-top: 3px; }',
-  '#pcg-efh.pcg-dark .pcg-bar { background: #2a2f38; }',
-  '#pcg-efh .pcg-bar > div { height: 100%; border-radius: 3px; transition: width .3s; }',
-  '#pcg-efh .pcg-row.c1 .pcg-bar > div { background: #cbd5e1; }',
-  '#pcg-efh.pcg-dark .pcg-row.c1 .pcg-bar > div { background: #475569; }',
-  '#pcg-efh .pcg-parent-badge { font-size: 11px; padding: 0 4px; border-radius: 3px; background: rgba(255,255,255,.7); color: #0369a1; margin-left: 4px; border: 1px solid #bae6fd; }',
-  '#pcg-efh.pcg-dark .pcg-parent-badge { background: rgba(56,189,248,.15); color: #7dd3fc; border-color: #0c4a6e; }',
+  '  border-radius: 6px; background: #fff; border: 1px solid #e2e8f0;',
+  '  border-left-width: 3px; border-left-style: solid; border-left-color: transparent; transition: all .15s; }',
+  '#pcg-efh.pcg-dark .pcg-row { background: #24252a; border-color: #34353c; }',
+  /* 行内容横排；分类标签统一靠右 */
+  '#pcg-efh .pcg-row > div { display: flex; align-items: center; gap: 4px; width: 100%; }',
+  '#pcg-efh .pcg-row .pcg-cat-badge { margin-left: auto; }',
+  /* 亮色：保留原整行渐变 + 分类边框 + 左色条 */
+  '#pcg-efh .pcg-row.c2 { background: linear-gradient(90deg,#fffbeb,#fef3c7); border-color: #fde68a; border-left-color: #f59e0b; }',
+  '#pcg-efh .pcg-row.c3 { background: linear-gradient(90deg,#eef2ff,#e0e7ff); border-color: #c7d2fe; border-left-color: #6366f1; }',
+  '#pcg-efh .pcg-row.c4 { background: linear-gradient(90deg,#fff7ed,#ffedd5); border-color: #fed7aa; border-left-color: #ea580c; }',
+  '#pcg-efh .pcg-row.c5 { background: linear-gradient(90deg,#faf5ff,#f3e8ff); border-color: #e9d5ff; border-left-color: #9333ea; }',
+  /* 暗色：中性底（不带蓝调）+ 明确的分类纯色，避免叠在蓝灰上发灰发脏 */
+  '#pcg-efh.pcg-dark .pcg-row.c2 { background: #6d4a12; border-color: #8c6224; border-left-color: #f59e0b; }',
+  '#pcg-efh.pcg-dark .pcg-row.c3 { background: #383b78; border-color: #4f5399; border-left-color: #6366f1; }',
+  '#pcg-efh.pcg-dark .pcg-row.c4 { background: #6d3720; border-color: #8a4a30; border-left-color: #ea580c; }',
+  '#pcg-efh.pcg-dark .pcg-row.c5 { background: #482a70; border-color: #61408f; border-left-color: #9333ea; }',
+  '#pcg-efh .pcg-k { font-family: "SF Mono",Menlo,Consolas,monospace; font-size: 11px; color: inherit; font-weight: 500; }',
+  '#pcg-efh .pcg-parent-badge { font-size: 11px; padding: 0 4px; border-radius: 3px; background: #fff; color: #0369a1; margin-left: 4px; border: 1px solid #bae6fd; }',
+  '#pcg-efh.pcg-dark .pcg-parent-badge { background: #1d4a61; color: #b6dff2; border-color: #356f8e; }',
+  '#pcg-efh .pcg-noparent { font-size: 11px; color: #5a616b; }',
+  '#pcg-efh.pcg-dark .pcg-noparent { color: #9aa3af; }',
   '#pcg-efh .pcg-cat-badge { font-size: 10px; padding: 1px 5px; border-radius: 3px; margin-left: 6px; font-weight: 600; letter-spacing: .02em; font-style: normal; }',
   '#pcg-efh .pcg-row.c2 .pcg-cat-badge { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }',
   '#pcg-efh.pcg-dark .pcg-row.c2 .pcg-cat-badge { background: rgba(245,158,11,.15); color: #fcd34d; border-color: #92400e; }',
@@ -544,7 +536,7 @@ GM_addStyle([
   '#pcg-efh .pcg-bx-badge.pcg-bx-off { background: #f1f5f9; color: #64748b; border-color: #e2e8f0; }',
   '#pcg-efh.pcg-dark .pcg-bx-badge.pcg-bx-off { background: rgba(148,163,184,.15); color: #94a3b8; border-color: #475569; }',
   /* 下一颗卡片：pcg-next 纵排（和普通 pcg-row 横排不同） */
-  '#pcg-efh .pcg-row.pcg-next { display: flex; flex-direction: column; gap: 4px; align-items: stretch; }',
+  '#pcg-efh .pcg-row.pcg-next { display: flex; flex-direction: column; gap: 3px; align-items: stretch; }',
   '#pcg-efh .pcg-row.pcg-next .pcg-next-row2 { display: flex; align-items: center; gap: 6px; width: 100%; }',
   '#pcg-efh .pcg-row.pcg-next .pcg-next-bar-wrap { flex: 1; min-width: 40px; height: 10px; background: #e2e8f0; border-radius: 5px; overflow: hidden; }',
   '#pcg-efh.pcg-dark .pcg-row.pcg-next .pcg-next-bar-wrap { background: #334155; }',
@@ -567,27 +559,6 @@ GM_addStyle([
   '#pcg-efh.pcg-dark #pcg-efh-refresh { background: linear-gradient(135deg,#d97706,#b45309); border-color: #92400e; box-shadow: 0 2px 8px rgba(217,119,6,.35); }',
   '#pcg-efh .pcg-empty { color: #9aa3af; font-size: 12px; padding: 8px 0; text-align: center; }',
   '#pcg-efh .pcg-err { color: #dc2626; font-size: 12px; padding: 8px 0; text-align: center; }',
-  '#pcg-efh .pcg-roll { font-family: "SF Mono",Menlo,Consolas,monospace; font-size: 10.5px; color: #5a616b; opacity: .85; }',
-  '#pcg-efh.pcg-dark .pcg-roll { color: #9aa3af; }',
-  '#pcg-efh .pcg-next-egg { padding: 10px; border-radius: 8px; border: 2px dashed #cbd5e1; margin-bottom: 12px; text-align: center; }',
-  '#pcg-efh.pcg-dark .pcg-next-egg { border-color: #475569; }',
-  '#pcg-efh .pcg-next-egg.c2 { border-style: solid; border-color: #f59e0b; background: linear-gradient(135deg,#fffbeb,#fef3c7); }',
-  '#pcg-efh.pcg-dark .pcg-next-egg.c2 { border-color: #92400e; background: linear-gradient(135deg,#451a03,#78350f); box-shadow: 0 0 12px rgba(245,158,11,.15); }',
-  '#pcg-efh .pcg-next-egg.c3 { border-style: solid; border-color: #6366f1; background: linear-gradient(135deg,#eef2ff,#e0e7ff); }',
-  '#pcg-efh.pcg-dark .pcg-next-egg.c3 { border-color: #3730a3; background: linear-gradient(135deg,#1e1b4b,#312e81); box-shadow: 0 0 12px rgba(99,102,241,.15); }',
-  '#pcg-efh .pcg-next-egg.c4 { border-style: solid; border-color: #ea580c; background: linear-gradient(135deg,#fff7ed,#ffedd5); box-shadow: 0 0 12px rgba(249,115,22,.2); }',
-  '#pcg-efh.pcg-dark .pcg-next-egg.c4 { border-color: #9a3412; background: linear-gradient(135deg,#431407,#7c2d12); box-shadow: 0 0 12px rgba(234,88,12,.25); }',
-  '#pcg-efh .pcg-next-egg.c5 { border-style: solid; border-color: #9333ea; background: linear-gradient(135deg,#faf5ff,#f3e8ff); box-shadow: 0 0 12px rgba(168,85,247,.2); }',
-  '#pcg-efh.pcg-dark .pcg-next-egg.c5 { border-color: #6b21a8; background: linear-gradient(135deg,#3b0764,#581c87); box-shadow: 0 0 12px rgba(147,51,234,.25); }',
-  '#pcg-efh .pcg-next-egg h3 { font-size: 14px; margin: 0 0 4px; font-weight: 800; }',
-  '#pcg-efh.pcg-dark .pcg-next-egg h3 { color: inherit; }',
-  '#pcg-efh .pcg-next-egg .pcg-next-cat { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 700; margin-bottom: 4px; }',
-  '#pcg-efh .pcg-next-egg.c2 .pcg-next-cat { background: #f59e0b; color: #fff; }',
-  '#pcg-efh .pcg-next-egg.c3 .pcg-next-cat { background: #6366f1; color: #fff; }',
-  '#pcg-efh .pcg-next-egg.c4 .pcg-next-cat { background: #ea580c; color: #fff; }',
-  '#pcg-efh .pcg-next-egg.c5 .pcg-next-cat { background: #9333ea; color: #fff; }',
-  '#pcg-efh .pcg-shiny-badge { display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 10px; font-size: 10.5px; font-weight: 700; background: linear-gradient(135deg,#fef3c7,#fde68a); color: #92400e; border: 1px solid #fcd34d; }',
-  '#pcg-efh.pcg-dark .pcg-shiny-badge { background: linear-gradient(135deg,#78350f,#92400e); color: #fde68a; border-color: #b45309; }',
 
   /* ---- 悬浮球（默认显示，点击展开面板） ---- */
   '#pcg-efh-orb { position: fixed; width: 44px; height: 44px; border-radius: 50%; z-index: 99998;',
@@ -603,16 +574,11 @@ GM_addStyle([
   '#pcg-efh.pcg-dark .pcg-warn { color: #fbbf24; }',
   '#pcg-efh .pcg-dist-bar { display: flex; gap: 3px; margin: 4px 0 8px; }',
   '#pcg-efh .pcg-dist-seg { flex: 1; height: 14px; border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 9px; color: #fff; font-weight: 700; opacity: .9; }',
-  '#pcg-efh .pcg-dist-c1 { background: #cbd5e1; }',
-  '#pcg-efh.pcg-dark .pcg-dist-c1 { background: #334155; }',
-  '#pcg-efh .pcg-dist-c2 { background: linear-gradient(90deg,#fbbf24,#f59e0b); }',
-  '#pcg-efh.pcg-dark .pcg-dist-c2 { background: linear-gradient(90deg,#d97706,#b45309); }',
-  '#pcg-efh .pcg-dist-c3 { background: linear-gradient(90deg,#818cf8,#6366f1); }',
-  '#pcg-efh.pcg-dark .pcg-dist-c3 { background: linear-gradient(90deg,#6366f1,#4338ca); }',
-  '#pcg-efh .pcg-dist-c4 { background: linear-gradient(90deg,#fb923c,#ea580c); }',
-  '#pcg-efh.pcg-dark .pcg-dist-c4 { background: linear-gradient(90deg,#c2410c,#9a3412); }',
-  '#pcg-efh .pcg-dist-c5 { background: linear-gradient(90deg,#c084fc,#9333ea); }',
-  '#pcg-efh.pcg-dark .pcg-dist-c5 { background: linear-gradient(90deg,#9333ea,#7e22ce); }',
+  '#pcg-efh .pcg-dist-c1 { background: #94a3b8; }',
+  '#pcg-efh .pcg-dist-c2 { background: #f59e0b; }',
+  '#pcg-efh .pcg-dist-c3 { background: #6366f1; }',
+  '#pcg-efh .pcg-dist-c4 { background: #ea580c; }',
+  '#pcg-efh .pcg-dist-c5 { background: #9333ea; }',
   '#pcg-efh .pcg-prog-list { display: flex; flex-wrap: wrap; gap: 4px; }',
   '#pcg-efh .pcg-prog { font-size: 11px; padding: 2px 6px; border-radius: 4px; font-weight: 500; background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }',
   '#pcg-efh.pcg-dark .pcg-prog { background: rgba(245,158,11,.12); color: #fcd34d; border-color: #78350f; }',
@@ -624,8 +590,8 @@ GM_addStyle([
   '#pcg-efh.pcg-dark .pcg-prog.pcg-prog-empty { background: rgba(148,163,184,.12); color: #64748b; border-color: #334155; }',
   /* ---- 孵蛋槽卡片 ---- */
   '#pcg-efh .pcg-slot { display: flex; align-items: center; gap: 6px; padding: 4px 8px; margin-bottom: 3px;',
-  '  border-radius: 6px; background: rgba(255,255,255,.5); border: 1px solid #e2e8f0; font-size: 11px; }',
-  '#pcg-efh.pcg-dark .pcg-slot { background: rgba(255,255,255,.04); border-color: #2a2f38; }',
+  '  border-radius: 6px; background: #fff; border: 1px solid #e2e8f0; font-size: 11px; }',
+  '#pcg-efh.pcg-dark .pcg-slot { background: #24252a; border-color: #34353c; }',
   '#pcg-efh .pcg-slot.pcg-slot-disabled { opacity: .5; }',
   '#pcg-efh .pcg-slot.c2 .pcg-cat-badge { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }',
   '#pcg-efh.pcg-dark .pcg-slot.c2 .pcg-cat-badge { background: rgba(245,158,11,.15); color: #fcd34d; border-color: #92400e; }',
@@ -779,7 +745,7 @@ function renderRow(row) {
   var c = CATEGORY[cat];
   var parentStr = row.parent
     ? ('<span class="pcg-parent-badge">槽' + row.parent.slot + ' ' + (row.parent.shiny ? '✦ ' : '') + dexName(row.parent.id) + '</span>')
-    : '';
+    : '<span class="pcg-noparent">无亲代</span>';
   var badge = c.badge ? '<span class="pcg-cat-badge">' + c.badge + '</span>' : '';
   var rollStr = row.roll != null ? (row.roll < 0.01 ? row.roll.toFixed(5) : row.roll.toFixed(4)) : '';
   var effectiveTh = row.parent && row.parent.shiny ? (1/16) : (1/512);
@@ -931,9 +897,9 @@ function paint() {
      数据源：win.next（分类） + save.pension.eggs（gauge+倒计时，取 k<laid 最大那颗） */
   var nx0 = win.next;
   if (nx0) {
-    var nxWho = nx0.parent
-      ? ('槽' + nx0.parent.slot + ' ' + (nx0.parent.shiny ? '✦ ' : '') + dexName(nx0.parent.id))
-      : '无亲代';
+    var nxParentHtml = nx0.parent
+      ? ('<span class="pcg-parent-badge">槽' + nx0.parent.slot + ' ' + (nx0.parent.shiny ? '✦ ' : '') + dexName(nx0.parent.id) + '</span>')
+      : '<span class="pcg-noparent">无亲代</span>';
     var nxC = CATEGORY[nx0.cat] || CATEGORY[1];
     /* gauge + 倒计时：取“最快孵出来”的那颗蛋（hatchAt 最小），即下一个出壳的 */
     var nxPct = 0, nxRemain = 0, nxRemainStr = '等待';
@@ -962,7 +928,7 @@ function paint() {
           + ' title="roll=' + nxRollStr + ' · threshold=' + (nx0.threshold != null ? nx0.threshold.toFixed(4) : '?')
           + ' · threshold(bx)=' + (nx0.thresholdBx != null ? nx0.thresholdBx.toFixed(4) : '?') + ' · k=' + nx0.k + '">';
     html += '<div><span class="pcg-k">下一颗 · k=' + nx0.k + '</span>';
-    html += '<span class="pcg-parent-badge">' + nxWho + '</span>';
+    html += nxParentHtml;
     if (nxC.badge) html += '<span class="pcg-cat-badge">' + nxC.badge + '</span>';
     html += '</div>';
     /* 第二行：bx badge + gauge + 倒计时 */
@@ -985,18 +951,17 @@ function paint() {
     for (var ri = 0; ri < hits.length; ri++) {
       var it = hits[ri].row;
       var st2 = Math.max(0, it.k - laid);
-      var who2 = it.parent
-        ? ('槽' + it.parent.slot + ' ' + (it.parent.shiny ? '✦ ' : '') + dexName(it.parent.id))
-        : '无亲代';
-      var prefix = st2 === 0 ? '下一颗' : ('第' + (st2 + 1) + '颗 · k=' + it.k);
+      var who2Html = it.parent
+        ? ('<span class="pcg-parent-badge">槽' + it.parent.slot + ' ' + (it.parent.shiny ? '✦ ' : '') + dexName(it.parent.id) + '</span>')
+        : '<span class="pcg-noparent">无亲代</span>';
+      var prefix = st2 === 0 ? ('下一颗 · k=' + it.k) : ('第' + (st2 + 1) + '颗 · k=' + it.k);
       /* 清单行本身不带 roll，用 k 现算回填（哈希开销可忽略），tooltip 不再留空 */
       var r2 = (it.roll != null) ? it.roll : eggKHash(it.k, save);
       var rowRoll = r2 < 0.01 ? r2.toFixed(5) : r2.toFixed(4);
       var rowTh = it.parent && it.parent.shiny ? '1/16' : '1/512';
       var hitCat = hits[ri].catNum || 4;
       html += '<div class="pcg-row c' + hitCat + '" title="roll=' + rowRoll + ' · threshold=' + rowTh + ' · k=' + it.k + '">';
-      html += '<div><span class="pcg-k">' + prefix + '</span>' +
-        '<span class="pcg-parent-badge">' + who2 + '</span>' + catTag(hitCat) + '</div></div>';
+      html += '<div><span class="pcg-k">' + prefix + '</span>' + who2Html + catTag(hitCat) + '</div></div>';
     }
   } else {
     html += '<div class="pcg-empty">扫描范围内暂无命中</div>';
