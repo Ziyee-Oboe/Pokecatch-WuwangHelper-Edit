@@ -2,7 +2,7 @@
 // @name         Poke'Catch 闪光蛋预测面板
 // @name:en      Poke'Catch Shiny Egg Forecast
 // @namespace    shinegg-forecast
-// @version      0.4.0
+// @version      0.4.1
 // @description  纯计算，零网络请求。读取游戏存档的 trainerSeed + pension.laid，用游戏同款 53 位确定性哈希预测未来每颗蛋是否闪光、roll 值、亲代抽取、多久后是闪。
 // @match        *://pokecatch-online.netlify.app/*
 // @run-at       document-idle
@@ -202,7 +202,9 @@ function eggCatOf(e, save) {
 }
 
 /* ============================================================================
- * nextShinyInfo — 核心预测函数，原封不动从 nursery-monitor.js 搬来
+ * nextShinyInfo — 核心预测函数，从 nursery-monitor.js 搬来。
+ * 与原版差异仅一处：删掉了本脚本用不到的 scanPool（poolList/berryPoolList）
+ * 和 flipList 扫描，省下每次约 4 万次哈希，显示结果完全不变。
  * ==========================================================================*/
 function nextShinyInfo(save) {
   try {
@@ -251,30 +253,7 @@ function nextShinyInfo(save) {
       return out;
     }
 
-    function scanPool(count, limit, forceBx) {
-      var out = [];
-      var N = pool.length;
-      for (var i = 0; i < (limit || 20000) && out.length < count; i++) {
-        var k = laid + i;
-        var th = base;
-        if (N) {
-          var r1 = eggHash(trainerSeed(save) + '|egg|' + k + '|1');
-          var idx = Math.floor(r1 * N);
-          var par = pool[idx];
-          if (par && par.shiny) th = Math.max(parentRate, base);
-        }
-        if (i === 0 && (bxNext || forceBx)) th = th * mult;
-        if (eggKHash(k, save) < th) {
-          var row = { step: i, k: k, etaMs: eta(i), threshold: th };
-          if (N) {
-            var idx2 = Math.floor(eggHash(trainerSeed(save) + '|egg|' + k + '|1') * N);
-            row.parent = pool[idx2] ? { id: pool[idx2].id, shiny: pool[idx2].shiny, slot: pool[idx2].slot } : null;
-          }
-          out.push(row);
-        }
-      }
-      return out;
-    }
+    /* 池模型扫描（scanPool）已删：原版用它算 poolList/berryPoolList，本脚本不消费 */
 
     var nextInfo = (function () {
       var k = laid;
@@ -312,31 +291,8 @@ function nextShinyInfo(save) {
       return out;
     }
 
-    /* 吃果才会闪（原版 flipList：逐颗按抽到的亲代是否闪光定阈值，roll 落在 [th, th×2)） */
-    var flipList = (function () {
-      var out = [];
-      var max = 2000;
-      var N = pool.length;
-      for (var i = 0; i < max && out.length < 20; i++) {
-        var k = laid + i;
-        var th = base;
-        var par = null;
-        if (N) {
-          var idx = Math.floor(eggHash(trainerSeed(save) + '|egg|' + k + '|1') * N);
-          par = pool[idx] || null;
-          if (par && par.shiny) th = Math.max(parentRate, base);
-        }
-        var r0 = eggKHash(k, save);
-        if (r0 >= th && r0 < th * mult) {
-          out.push({ step: i, k: k, etaMs: eta(i), threshold: th, parent: par ? { id: par.id, shiny: par.shiny, slot: par.slot } : null });
-        }
-      }
-      return out;
-    })();
     var flipShinyList = scanFlip(Math.max(parentRate, base), 10);
     var flipPlainList = scanFlip(base, 10);
-    var poolList = scanPool(10, 20000);
-    var berryPoolList = scanPool(10, 20000, true);
     var shinyList = scanFixed(Math.max(parentRate, base), 10, 20000);
     var plainList = scanFixed(base, 3, 50000);
 
@@ -344,9 +300,7 @@ function nextShinyInfo(save) {
       laid: laid, bx: bxNext, poolSize: pool.length, poolShiny: pool.filter(function (p) { return p.shiny; }).length,
       pool: pool, hasDitto: hasDitto, next: nextInfo,
       shinyList: shinyList, plainList: plainList,
-      poolList: poolList, flipList: flipList, flipShinyList: flipShinyList, flipPlainList: flipPlainList,
-      berryPoolList: berryPoolList,
-      shiny: shinyList[0] || null, plain: plainList[0] || null, poolFirst: poolList[0] || null
+      flipShinyList: flipShinyList, flipPlainList: flipPlainList
     };
   } catch (e) { /* ignore */ }
   return null;
@@ -538,9 +492,9 @@ GM_addStyle([
   /* 下一颗卡片：pcg-next 纵排（和普通 pcg-row 横排不同） */
   '#pcg-efh .pcg-row.pcg-next { display: flex; flex-direction: column; gap: 3px; align-items: stretch; }',
   '#pcg-efh .pcg-row.pcg-next .pcg-next-row2 { display: flex; align-items: center; gap: 6px; width: 100%; }',
-  '#pcg-efh .pcg-row.pcg-next .pcg-next-bar-wrap { flex: 1; min-width: 40px; height: 10px; background: #e2e8f0; border-radius: 5px; overflow: hidden; }',
+  '#pcg-efh .pcg-row.pcg-next .pcg-next-bar-wrap { flex: 1; min-width: 40px; height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden; }',
   '#pcg-efh.pcg-dark .pcg-row.pcg-next .pcg-next-bar-wrap { background: #334155; }',
-  '#pcg-efh .pcg-row.pcg-next .pcg-next-bar { height: 100%; border-radius: 5px; transition: width .3s; }',
+  '#pcg-efh .pcg-row.pcg-next .pcg-next-bar { height: 100%; border-radius: 3px; transition: width .3s; }',
   /* 下一颗 gauge 颜色（按分类） */
   '#pcg-efh .pcg-row.pcg-next.c1 .pcg-next-bar { background: #3b82f6; }',
   '#pcg-efh .pcg-row.pcg-next.c2 .pcg-next-bar { background: linear-gradient(90deg,#f59e0b,#d97706); }',
@@ -590,8 +544,14 @@ GM_addStyle([
   '#pcg-efh.pcg-dark .pcg-prog.pcg-prog-empty { background: rgba(148,163,184,.12); color: #64748b; border-color: #334155; }',
   /* ---- 孵蛋槽卡片 ---- */
   '#pcg-efh .pcg-slot { display: flex; align-items: center; gap: 6px; padding: 4px 8px; margin-bottom: 3px;',
-  '  border-radius: 6px; background: #fff; border: 1px solid #e2e8f0; font-size: 11px; }',
+  '  border-radius: 6px; background: #fff; border: 1px solid #e2e8f0; font-size: 11px;',
+  '  border-left-width: 3px; border-left-style: solid; border-left-color: transparent; }',
   '#pcg-efh.pcg-dark .pcg-slot { background: #24252a; border-color: #34353c; }',
+  /* 左侧分类色条（亮暗共用同一组强调色；c1 普通=透明，放在暗色规则后以同优先级覆盖） */
+  '#pcg-efh .pcg-slot.c2 { border-left-color: #f59e0b; }',
+  '#pcg-efh .pcg-slot.c3 { border-left-color: #6366f1; }',
+  '#pcg-efh .pcg-slot.c4 { border-left-color: #ea580c; }',
+  '#pcg-efh .pcg-slot.c5 { border-left-color: #9333ea; }',
   '#pcg-efh .pcg-slot.pcg-slot-disabled { opacity: .5; }',
   '#pcg-efh .pcg-slot.c2 .pcg-cat-badge { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }',
   '#pcg-efh.pcg-dark .pcg-slot.c2 .pcg-cat-badge { background: rgba(245,158,11,.15); color: #fcd34d; border-color: #92400e; }',
@@ -603,9 +563,9 @@ GM_addStyle([
   '#pcg-efh.pcg-dark .pcg-slot.c5 .pcg-cat-badge { background: rgba(147,51,234,.15); color: #d8b4fe; border-color: #6b21a8; }',
   '#pcg-efh .pcg-slot.c1 .pcg-cat-badge { display: none; }',
   '#pcg-efh .pcg-slot .pcg-parent-badge { margin-left: 0; white-space: nowrap; }',
-  '#pcg-efh .pcg-slot-gauge { flex: 1; height: 4px; background: rgba(0,0,0,.08); border-radius: 2px; overflow: hidden; min-width: 40px; }',
+  '#pcg-efh .pcg-slot-gauge { flex: 1; height: 6px; background: rgba(0,0,0,.08); border-radius: 3px; overflow: hidden; min-width: 40px; }',
   '#pcg-efh.pcg-dark .pcg-slot-gauge { background: rgba(255,255,255,.1); }',
-  '#pcg-efh .pcg-slot-gauge > div { height: 100%; border-radius: 2px; }',
+  '#pcg-efh .pcg-slot-gauge > div { height: 100%; border-radius: 3px; }',
   '#pcg-efh .pcg-slot.c1 .pcg-slot-gauge > div { background: #3b82f6; }',
   '#pcg-efh .pcg-slot.c2 .pcg-slot-gauge > div { background: linear-gradient(90deg,#f59e0b,#d97706); }',
   '#pcg-efh .pcg-slot.c3 .pcg-slot-gauge > div { background: linear-gradient(90deg,#6366f1,#4f46e5); }',
@@ -1002,11 +962,6 @@ function paint() {
 }
 
 /* ---------- 启动 ---------- */
-if (storeGet('closed') && Date.now() - storeGet('closed') < 60 * 60 * 1000) {
-  /* 用户 1 小时内刚关过，先不自动弹出 */
-  // 但还是启动计算循环，让用户手动刷新时能看到
-}
-
 var panel = createPanel();
 paint();
 /* 自动刷新：每 30 秒重算重绘，让倒计时和进度条自己走（重扫描有 3 秒缓存，开销可忽略） */
