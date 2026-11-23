@@ -1029,15 +1029,9 @@ function paint() {
   html += '</div>';
 
   body.innerHTML = html;
-  /* footer：存档统计 + DOM 读取状态 + 时钟校准 */
+  /* footer：存档统计 */
   var footBits = ['k=' + info.laid];
   footBits.push('近' + win.count + '颗：裸闪 ' + bare + ' / 吃果 ' + berry);
-  var domCount = Object.keys(eggCards).length;
-  if (domCount > 0) {
-    footBits.push('培育屋 ' + domCount + '颗');
-  } else {
-    footBits.push('未在培育屋页');
-  }
   footer.textContent = footBits.join(' · ');
 }
 
