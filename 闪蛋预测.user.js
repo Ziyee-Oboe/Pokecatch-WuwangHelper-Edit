@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         闪蛋预测
+// @name         Poke'Catch 闪光蛋预测面板
 // @name:en      Shiny Egg Forecast
 // @namespace    shinegg-forecast
 // @version      0.3.0
@@ -497,7 +497,7 @@ function createPanel() {
   el.id = 'pcg-efh';
   el.innerHTML = [
     '<div class="pcg-head" id="pcg-efh-head">',
-    '  <span class="pcg-title">闪蛋预测</span>',
+    '  <span class="pcg-title">闪光蛋预测</span>',
     '  <button id="pcg-efh-theme" title="主题">◐</button>',
     '  <button id="pcg-efh-fold" title="最小化（回到悬浮球）">—</button>',
     '</div>',
@@ -512,7 +512,7 @@ function createPanel() {
   /* 悬浮球（默认显示，点击展开面板） */
   var orb = document.createElement('div');
   orb.id = 'pcg-efh-orb';
-  orb.title = '闪蛋预测 · 点击展开';
+  orb.title = '闪光蛋预测 · 点击展开';
   orb.innerHTML = '✦';
   document.documentElement.appendChild(orb);
 
