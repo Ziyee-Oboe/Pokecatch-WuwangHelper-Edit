@@ -2,9 +2,10 @@
 // @name         Poke'Catch 闪光蛋预测面板
 // @name:en      Poke'Catch Shiny Egg Forecast
 // @namespace    shinegg-forecast
-// @version      0.4.1
+// @version      0.4.2
 // @description  纯计算，零网络请求。读取游戏存档的 trainerSeed + pension.laid，用游戏同款 53 位确定性哈希预测未来每颗蛋是否闪光、roll 值、亲代抽取、多久后是闪。
 // @match        *://pokecatch-online.netlify.app/*
+// @match        *://pokecatch-online.app/*
 // @run-at       document-idle
 // @grant        GM_setValue
 // @grant        GM_getValue
